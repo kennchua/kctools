@@ -14,11 +14,13 @@
 
 kcf_sum <- function(data, sumvar, byvar = NULL) {
   data |>
-    tidytable::summarize.(across.(c({{ sumvar }}),
+    tidytable::select.({{ byvar }}, {{ sumvar }}) |>
+    tidytable::select.({{ byvar }}, where(is.numeric)) |>
+    tidytable::summarize.(across.(everything(),
                                   list(avg = ~ mean(., na.rm = TRUE),
                                        sdv = ~ sd(., na.rm = TRUE),
-                                       numobs = ~ dplyr::n(),
-                                       numna = ~ sum(is.na(.)),
+                                       nobs = ~ dplyr::n(),
+                                       nna = ~ sum(is.na(.)),
                                        min = ~min(., na.rm = TRUE),
                                        max = ~max(., na.rm = TRUE),
                                        p05 = ~quantile(., 0.05, na.rm = TRUE),

@@ -1,0 +1,21 @@
+#' Tabulate provided vars to display count and proportion.
+#' @param data The data frame to tabulate.
+#' @param tabvar The variables to tabulate.
+#' @return A data frame with tabulation of counts and proportions.
+#' @import dplyr
+#' @export
+#' @examples
+#' \dontrun{
+#' kc_tab(mtcars, c(vs))
+#' kc_tab(mtcars, c(vs, am))
+#' }
+
+
+kc_tab <- function(data, tabvar, dropna = FALSE) {
+  data |>
+    {\(df) if (dropna == TRUE) dplyr::filter(df, dplyr::across(c({{ tabvar }}), ~ !is.na(.))) else df}() |>
+    dplyr::group_by(across({{ tabvar }})) |> # when passing multiple group_by arguments...
+    dplyr::count() |>
+    dplyr::ungroup() |>
+    dplyr::mutate(prop = n/sum(n))
+}

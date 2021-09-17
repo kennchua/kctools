@@ -15,12 +15,14 @@
 
 kc_sum <- function(data, sumvar, byvar = NULL) {
   data |>
-    dplyr::group_by(across({{ byvar }})) |> # allow multiple grouping var with across()
-    dplyr::summarize(across(c({{ sumvar }}),
+    dplyr::group_by(across({{ byvar }})) |>
+    dplyr::select({{ sumvar }}) |>
+    dplyr::select(where(is.numeric)) |>
+    dplyr::summarize(across(everything(),
                             list(avg = ~ mean(., na.rm = TRUE),
                                  sdv = ~ sd(., na.rm = TRUE),
-                                 numobs = ~ dplyr::n(),
-                                 numna = ~ sum(is.na(.)),
+                                 nobs = ~ dplyr::n(),
+                                 nna = ~ sum(is.na(.)),
                                  min = ~min(., na.rm = TRUE),
                                  max = ~max(., na.rm = TRUE),
                                  p05 = ~quantile(., 0.05, na.rm = TRUE),
