@@ -23,6 +23,6 @@ Compute descriptive statistics for provided vars, optionally by group.
 \dontrun{
 kc_sum(mtcars, c(mpg, disp))
 kc_sum(mtcars, c(mpg, disp), c(vs, am))
-kcf_sum(mtcars, where(is.numeric))
+kc_sum(mtcars, where(is.numeric))
 }
 }
