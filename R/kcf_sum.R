@@ -19,7 +19,7 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
     tidytable::summarize.(across.(everything(),
                                   list(avg = ~ mean(., na.rm = TRUE),
                                        sdv = ~ sd(., na.rm = TRUE),
-                                       nobs = ~ dplyr::n(),
+                                       nobs = ~ tidytable::n.(),
                                        nna = ~ sum(is.na(.)),
                                        min = ~min(., na.rm = TRUE),
                                        max = ~max(., na.rm = TRUE),
