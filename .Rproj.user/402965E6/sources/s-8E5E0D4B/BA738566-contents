@@ -2,15 +2,14 @@
 #' @param data The data frame to summarize.
 #' @param sumvar The variables to summarize.
 #' @param byvar The variables to group by. (optional)
-#' @param ... Optional. Columns in the data frame
 #' @return A data frame with descriptive statistics: each var is a row; respective stats are in column.
 #' @import dplyr
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @export
 #' @examples
 #' \dontrun{
 #' kc_sum(mtcars, c(mpg, disp))
 #' kc_sum(mtcars, c(mpg, disp), c(vs, am))
+#' kcf_sum(mtcars, where(is.numeric))
 #' }
 
 kc_sum <- function(data, sumvar, byvar = NULL) {

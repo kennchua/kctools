@@ -3,7 +3,6 @@
 #' @param dupvar The variables to check for duplicates
 #' @return A data frame with counts per group, tag of whether duplicated, counter within group.
 #' @import dplyr
-#' @export
 #' @examples
 #' \dontrun{
 #' kc_dup(mtcars, c(vs))

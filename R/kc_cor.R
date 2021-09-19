@@ -1,9 +1,8 @@
-#' Compute correlation matrix and display lower triangular only.
+#' Compute correlation matrix and display lower triangular and diagonal only.
 #' @param data The data frame to use.
 #' @param corvar The variables to correlate.
-#' @return Either a data frame or matrix.
+#' @return Either a data frame or matrix of correlations.
 #' @import dplyr
-#' @export
 #' @examples
 #' \dontrun{
 #' kc_cor(mtcars, c(mpg, disp))

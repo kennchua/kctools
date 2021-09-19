@@ -1,21 +1,13 @@
-#' Create data frame with pairwise distances of points in sf objects x and y.
-#' @param data The data frame to examine for duplicates
-#' @param x sf object
-#' @param y sf object
+#' Create data frame containing pairwise distances of points in sf objects x and y.
+#' @param x an sf object
+#' @param y an sf object
 #' @param idx id variable for each row in x
 #' @param idy id variable for each row in y
-#' @return A data frame pairwise distances of each row in x and y
+#' @return A data frame containing pairwise distances of each row in x and y
 #' @import dplyr
 #' @import sf
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @importFrom stringr str_replace
-#' @export
-#' @examples
-#' \dontrun{
-#'
-#'
-#' }
-
 
 st_pairwise_dist <- function(x, y, idx, idy) {
   if(!inherits(x, "sf") | !inherits(y, "sf")) {
