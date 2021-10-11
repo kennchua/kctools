@@ -22,5 +22,13 @@ Check the pertinent function for use cases and examples.
 
 ``` r
 library(kctools)
-```
+# Data exploration tools:
+# kc_sum(): generate summary statistics
+# kc_tab(): tabulate variables
+# kc_dup(): create indicators for duplicated observations
+# kc_cor(): create correlation matrix with lower triangular and diagonal elements only
+# See also kcf_* counterparts for tidytable implementation
 
+# Spatial analysis tools:
+# kc_spatial: create data frame with pairwise distances of two sf objects
+```
