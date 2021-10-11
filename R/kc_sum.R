@@ -1,15 +1,15 @@
 #' Compute descriptive statistics for provided vars, optionally by group.
 #' @param data The data frame to summarize.
-#' @param sumvar The variables to summarize.
+#' @param sumvar The variables to summarize; accommodates tidyselect helpers.
 #' @param byvar The variables to group by. (optional)
-#' @return A data frame with descriptive statistics: each var is a row; respective stats are in column.
+#' @return A data frame with descriptive stats: each var is a row; respective statistics are in column.
 #' @import dplyr
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @examples
 #' \dontrun{
-#' kc_sum(mtcars, c(mpg, disp))
-#' kc_sum(mtcars, c(mpg, disp), c(vs, am))
-#' kc_sum(mtcars, where(is.numeric))
+#' kc_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp
+#' kc_sum(mtcars, c(mpg, disp), c(vs)) # summary stats for vars mpg and disp by vs
+#' kc_sum(mtcars, where(is.numeric)) # summary stats for all numeric vars
 #' }
 
 kc_sum <- function(data, sumvar, byvar = NULL) {

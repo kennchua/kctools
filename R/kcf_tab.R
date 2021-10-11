@@ -5,8 +5,8 @@
 #' @import tidytable
 #' @examples
 #' \dontrun{
-#' kcf_tab(mtcars, c(vs))
-#' kcf_tab(mtcars, c(vs, am))
+#' kcf_tab(mtcars, c(vs)) # one-way tabulate
+#' kcf_tab(mtcars, c(vs, am)) # two-way tabulate
 #' }
 
 

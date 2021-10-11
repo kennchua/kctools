@@ -1,14 +1,14 @@
 #' Compute descriptive statistics for provided vars, optionally by group. Speedboost via tidytable.
 #' @param data The data frame to summarize.
-#' @param sumvar The variables to summarize.
+#' @param sumvar The variables to summarize; accommodates tidyselect helpers.
 #' @param byvar The variables to group by. (optional)
-#' @return A data frame with descriptive statistics: each var is a row; respective stats are in column.
+#' @return A data frame with descriptive stats: each var is a row; respective statistics are in column.
 #' @import tidytable
 #' @examples
 #' \dontrun{
-#' kcf_sum(mtcars, c(mpg, disp))
-#' kcf_sum(mtcars, c(mpg, disp), c(vs, am))
-#' kcf_sum(mtcars, where(is.numeric))
+#' kcf_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp
+#' kcf_sum(mtcars, c(mpg, disp), c(vs)) # summary stats for vars mpg and disp by vs
+#' kcf_sum(mtcars, where(is.numeric)) # summary stats for all numeric vars
 #' }
 
 kcf_sum <- function(data, sumvar, byvar = NULL) {

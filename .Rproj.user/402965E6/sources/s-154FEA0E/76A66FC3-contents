@@ -5,8 +5,8 @@
 #' @import dplyr
 #' @examples
 #' \dontrun{
-#' kc_tab(mtcars, c(vs))
-#' kc_tab(mtcars, c(vs, am))
+#' kc_tab(mtcars, c(vs)) # one-way tabulate
+#' kc_tab(mtcars, c(vs, am)) # two-way tabulate
 #' }
 
 
