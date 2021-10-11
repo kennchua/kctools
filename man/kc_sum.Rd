@@ -9,20 +9,20 @@ kc_sum(data, sumvar, byvar = NULL)
 \arguments{
 \item{data}{The data frame to summarize.}
 
-\item{sumvar}{The variables to summarize.}
+\item{sumvar}{The variables to summarize; accommodates tidyselect helpers.}
 
 \item{byvar}{The variables to group by. (optional)}
 }
 \value{
-A data frame with descriptive statistics: each var is a row; respective stats are in column.
+A data frame with descriptive stats: each var is a row; respective statistics are in column.
 }
 \description{
 Compute descriptive statistics for provided vars, optionally by group.
 }
 \examples{
 \dontrun{
-kc_sum(mtcars, c(mpg, disp))
-kc_sum(mtcars, c(mpg, disp), c(vs, am))
-kc_sum(mtcars, where(is.numeric))
+kc_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp
+kc_sum(mtcars, c(mpg, disp), c(vs)) # summary stats for vars mpg and disp by vs
+kc_sum(mtcars, where(is.numeric)) # summary stats for all numeric vars
 }
 }
