@@ -19,7 +19,7 @@ Compute correlation matrix and display lower triangular and diagonal only.
 }
 \examples{
 \dontrun{
-kc_cor(mtcars, c(mpg, disp))
-kc_cor(mtcars, starts_with("c"))
+kc_cor(mtcars, c(mpg, disp, wt)) # returns df correlations of mpg, disp, and wt
+kc_cor(mtcars, starts_with("c"), df = FALSE) # returns matrix of correlations of vars beginning in c
 }
 }

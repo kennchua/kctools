@@ -9,20 +9,20 @@ kcf_sum(data, sumvar, byvar = NULL)
 \arguments{
 \item{data}{The data frame to summarize.}
 
-\item{sumvar}{The variables to summarize.}
+\item{sumvar}{The variables to summarize; accommodates tidyselect helpers.}
 
 \item{byvar}{The variables to group by. (optional)}
 }
 \value{
-A data frame with descriptive statistics: each var is a row; respective stats are in column.
+A data frame with descriptive stats: each var is a row; respective statistics are in column.
 }
 \description{
 Compute descriptive statistics for provided vars, optionally by group. Speedboost via tidytable.
 }
 \examples{
 \dontrun{
-kcf_sum(mtcars, c(mpg, disp))
-kcf_sum(mtcars, c(mpg, disp), c(vs, am))
-kcf_sum(mtcars, where(is.numeric))
+kcf_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp
+kcf_sum(mtcars, c(mpg, disp), c(vs)) # summary stats for vars mpg and disp by vs
+kcf_sum(mtcars, where(is.numeric)) # summary stats for all numeric vars
 }
 }
