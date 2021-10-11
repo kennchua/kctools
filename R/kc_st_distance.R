@@ -9,7 +9,7 @@
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @importFrom stringr str_replace
 
-st_pairwise_dist <- function(x, y, idx, idy) {
+kc_st_distance <- function(x, y, idx, idy) {
   if(!inherits(x, "sf") | !inherits(y, "sf")) {
     stop("x and y must be sf objects")
   }
