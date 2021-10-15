@@ -1,7 +1,7 @@
 /Volumes/GoogleDrive/My Drive/Git/kctools/DESCRIPTION="FAD347A2"
 /Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_cor.R="1860BEDB"
 /Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_dup.R="88B71FAA"
-/Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_spatial.R="13B278FC"
+/Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_regtex.R="1805550F"
 /Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_st_distance.R="1A8AC841"
 /Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_sum.R="0CFBE14F"
 /Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_tab.R="51290860"
@@ -12,4 +12,3 @@
 /Volumes/GoogleDrive/My Drive/Git/kctools/man/kc_cor.Rd="6CE710B3"
 /Volumes/GoogleDrive/My Drive/Git/kctools/man/kc_sum.Rd="7FED816A"
 /Volumes/GoogleDrive/My Drive/Git/kctools/man/kcf_sum.Rd="D74F7AFE"
-/Volumes/GoogleDrive/My Drive/Git/kctools/man/st_pairwise_dist.Rd="2FD1D18B"
