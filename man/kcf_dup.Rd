@@ -2,7 +2,7 @@
 % Please edit documentation in R/kcf_dup.R
 \name{kcf_dup}
 \alias{kcf_dup}
-\title{Count and tag duplicate rows based on provided vars.}
+\title{Indicators for duplicated rows}
 \usage{
 kcf_dup(data, dupvar)
 }
@@ -15,7 +15,7 @@ kcf_dup(data, dupvar)
 A data frame with counts per group, tag of whether duplicated, counter within group.
 }
 \description{
-Count and tag duplicate rows based on provided vars.
+Generate columns with count of occurrences, tag for duplication, and running count of occurrences. Speedboost via tidytable.
 }
 \examples{
 \dontrun{

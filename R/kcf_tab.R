@@ -1,4 +1,6 @@
-#' Tabulate provided vars to display count and proportion. Speedboost via tidytable.
+#' Tabulate frequency and relative frequency
+#'
+#' One-way and two-way tabulations of provided variables Speedboost via tidytable.
 #' @param data The data frame to tabulate.
 #' @param tabvar The variables to tabulate.
 #' @return A data frame with tabulation of counts and proportions.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_cor.R
 \name{kc_cor}
 \alias{kc_cor}
-\title{Compute correlation matrix and display lower triangular and diagonal only.}
+\title{Custom correlation matrix}
 \usage{
 kc_cor(data, corvar, df = TRUE)
 }

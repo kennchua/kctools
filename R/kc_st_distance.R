@@ -1,3 +1,5 @@
+#' Pairwise distance of sf objects
+#'
 #' Create data frame containing pairwise distances of points in sf objects x and y.
 #' @param x an sf object
 #' @param y an sf object

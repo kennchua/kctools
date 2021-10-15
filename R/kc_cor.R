@@ -1,3 +1,5 @@
+#' Custom correlation matrix
+#'
 #' Compute correlation matrix and display lower triangular and diagonal only.
 #' @param data The data frame to use.
 #' @param corvar The variables to correlate.

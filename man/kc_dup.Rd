@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_dup.R
 \name{kc_dup}
 \alias{kc_dup}
-\title{Count and tag duplicate rows based on provided vars.}
+\title{Indicators for duplicated rows}
 \usage{
 kc_dup(data, dupvar)
 }
@@ -15,7 +15,7 @@ kc_dup(data, dupvar)
 A data frame with counts per group, tag of whether duplicated, counter within group.
 }
 \description{
-Count and tag duplicate rows based on provided vars.
+Generate columns with count of occurrences, tag for duplication, and running count of occurrences
 }
 \examples{
 \dontrun{

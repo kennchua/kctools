@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_sum.R
 \name{kc_sum}
 \alias{kc_sum}
-\title{Compute descriptive statistics for provided vars, optionally by group.}
+\title{Descriptive statistics}
 \usage{
 kc_sum(data, sumvar, byvar = NULL)
 }
@@ -17,7 +17,7 @@ kc_sum(data, sumvar, byvar = NULL)
 A data frame with descriptive stats: each var is a row; respective statistics are in column.
 }
 \description{
-Compute descriptive statistics for provided vars, optionally by group.
+Compute pre-selected set of descriptive statistics for provided vars, optionally by group.
 }
 \examples{
 \dontrun{

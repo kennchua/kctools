@@ -2,7 +2,7 @@
 % Please edit documentation in R/kcf_tab.R
 \name{kcf_tab}
 \alias{kcf_tab}
-\title{Tabulate provided vars to display count and proportion. Speedboost via tidytable.}
+\title{Tabulate frequency and relative frequency}
 \usage{
 kcf_tab(data, tabvar, dropna = FALSE)
 }
@@ -15,7 +15,7 @@ kcf_tab(data, tabvar, dropna = FALSE)
 A data frame with tabulation of counts and proportions.
 }
 \description{
-Tabulate provided vars to display count and proportion. Speedboost via tidytable.
+One-way and two-way tabulations of provided variables Speedboost via tidytable.
 }
 \examples{
 \dontrun{

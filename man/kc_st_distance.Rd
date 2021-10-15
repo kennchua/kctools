@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_st_distance.R
 \name{kc_st_distance}
 \alias{kc_st_distance}
-\title{Create data frame containing pairwise distances of points in sf objects x and y.}
+\title{Pairwise distance of sf objects}
 \usage{
 kc_st_distance(x, y, idx, idy)
 }

@@ -1,4 +1,6 @@
-#' Tabulate provided vars to display count and proportion.
+#' Tabulate frequency and relative frequency
+#'
+#' One-way and two-way tabulations of provided variables
 #' @param data The data frame to tabulate.
 #' @param tabvar The variables to tabulate.
 #' @return A data frame with tabulation of counts and proportions.

@@ -1,4 +1,6 @@
-#' Compute descriptive statistics for provided vars, optionally by group.
+#' Descriptive statistics
+#'
+#' Compute pre-selected set of descriptive statistics for provided vars, optionally by group.
 #' @param data The data frame to summarize.
 #' @param sumvar The variables to summarize; accommodates tidyselect helpers.
 #' @param byvar The variables to group by. (optional)

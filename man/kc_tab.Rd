@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_tab.R
 \name{kc_tab}
 \alias{kc_tab}
-\title{Tabulate provided vars to display count and proportion.}
+\title{Tabulate frequency and relative frequency}
 \usage{
 kc_tab(data, tabvar, dropna = FALSE)
 }
@@ -15,7 +15,7 @@ kc_tab(data, tabvar, dropna = FALSE)
 A data frame with tabulation of counts and proportions.
 }
 \description{
-Tabulate provided vars to display count and proportion.
+One-way and two-way tabulations of provided variables
 }
 \examples{
 \dontrun{

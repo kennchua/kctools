@@ -2,7 +2,7 @@
 % Please edit documentation in R/kcf_sum.R
 \name{kcf_sum}
 \alias{kcf_sum}
-\title{Compute descriptive statistics for provided vars, optionally by group. Speedboost via tidytable.}
+\title{Descriptive statistics}
 \usage{
 kcf_sum(data, sumvar, byvar = NULL)
 }
@@ -17,7 +17,7 @@ kcf_sum(data, sumvar, byvar = NULL)
 A data frame with descriptive stats: each var is a row; respective statistics are in column.
 }
 \description{
-Compute descriptive statistics for provided vars, optionally by group. Speedboost via tidytable.
+Compute pre-selected set of descriptive statistics for provided vars, optionally by group. Speedboost via tidytable.
 }
 \examples{
 \dontrun{
