@@ -24,21 +24,36 @@ kc_regtex <- function(reglist,
   options(modelsummary_format_numeric_latex = "plain")
 
   # Set which gof statistics appear
-  mod_gof <-
-    tibble::tribble(
-      ~raw,               ~clean,                        ~fmt,
-      "nobs",             "Observations",                  function(x) format(round(x, 3), big.mark=","),
-      "nclusters",        "Number of clusters",            function(x) format(round(x, 3), big.mark=","),
-      "r.squared",        "\\textit{R}-squared",           2,
-      "adj.r.squared",    "Adjusted \\textit{R}-squared",  2,
-      "pseudo.r.squared", "Pseudo \\textit{R}-squared",    2,
-      "rmse",             "RMSE",                          3,
-      "statistic.Weak.instrument", "IV F-stat",            1,
-      "p.value.Weak.instrument", "Weak IV p-value",        3,
-      "p.value.Wu.Hausman", "Wu-Hausman p-value",          3,
-      "p.value.Sargan",   "Sargan p-value",                3) |>
-    {\(df) if (!is.null(gof_stat)) filter(df, raw %in% gof_stat) else df}()
+  # mod_gof <-
+  #   tibble::tribble(
+  #     ~raw,               ~clean,                        ~fmt,
+  #     "nobs",             "Observations",                  function(x) format(round(x, 3), big.mark=","),
+  #     "nclusters",        "Number of clusters",            function(x) format(round(x, 3), big.mark=","),
+  #     "r.squared",        "\\textit{R}-squared",           2,
+  #     "adj.r.squared",    "Adjusted \\textit{R}-squared",  2,
+  #     "pseudo.r.squared", "Pseudo \\textit{R}-squared",    2,
+  #     "rmse",             "RMSE",                          3,
+  #     "statistic.Weak.instrument", "IV F-stat",            1,
+  #     "p.value.Weak.instrument", "Weak IV p-value",        3,
+  #     "p.value.Wu.Hausman", "Wu-Hausman p-value",          3,
+  #     "p.value.Sargan",   "Sargan p-value",                3) |>
+  #   {\(df) if (!is.null(gof_stat)) filter(df, raw %in% gof_stat) else df}()
 
+  mod_gof <-
+    list(
+      nobs = list("raw" = "nobs", "clean" = "Observations", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+      nclusters = list("raw" = "nclusters", "clean" = "Number of clusters", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+      r.squared = list("raw" = "r.squared", "clean" = "\\textit{R}-squared", "fmt" = 2),
+      adj.r.squared = list("raw" = "adj.r.squared", "clean" = "Adjusted \\textit{R}-squared", "fmt" = 2),
+      pseudo.r.squared = list("raw" = "pseudo.r.squared", "clean" = "Pseudo \\textit{R}-squared", "fmt" = 2),
+      rmse = list("raw" = "rmse", "clean" = "RMSE", "fmt" = 3),
+      AIC = list("raw" = "AIC", "clean" = "AIC", "fmt" = 3),
+      statistic.Weak.instrument = list("raw" = "statistic.Weak.instrument", "clean" = "IV F-stat", "fmt" = 3),
+      p.value.Weak.instrument = list("raw" = "p.value.Weak.instrument", "clean" = "Weak IV p-value", "fmt" = 3),
+      p.value.Wu.Hausman = list("raw" = "p.value.Wu.Hausman", "clean" = "Wu-Hausman p-value", "fmt" = 3),
+      p.value.Sargan = list("raw" = "p.value.Sargan", "clean" = "Sargan p-value", "fmt" = 3)
+    ) |>
+    {\(df) if (!is.null(gof_stat)) purrr::keep(df, names(.) %in% gof_stat) else df}()
 
   # Variables to include and their labels
   if (is.null(xvar_raw) == TRUE ) {
