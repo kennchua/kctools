@@ -117,8 +117,11 @@ kc_regtex <- function(reglist,
     mod_iv =  paste(paste(c("IV F-stat", wald_vec),
                           collapse = " & "),
                     "\\\\\n", sep = "")
-
+    print("Mod_IV")
+    print(mod_iv)
     mod_det = paste(mod_det, mod_iv, sep = "")
+    print("Mod_DET")
+    print(mod_det)
   }
 
 
