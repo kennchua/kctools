@@ -27,8 +27,8 @@ kc_regtex <- function(reglist,
   mod_gof <-
     tibble::tribble(
       ~raw,               ~clean,                        ~fmt,
-      "nobs",             "Observations",                  0,
-      "nclusters",        "Number of clusters",            0,
+      "nobs",             "Observations",                  function(x) format(round(x, 3), big.mark=","),
+      "nclusters",        "Number of clusters",            function(x) format(round(x, 3), big.mark=","),
       "r.squared",        "\\textit{R}-squared",           2,
       "adj.r.squared",    "Adjusted \\textit{R}-squared",  2,
       "pseudo.r.squared", "Pseudo \\textit{R}-squared",    2,
