@@ -113,7 +113,7 @@ kc_regtex <- function(reglist,
         }
       }
     }
-
+    print(wald_vec)
     mod_iv =  paste(paste(c("IV F-stat", wald_vec),
                           collapse = " & "),
                     "\\\\\n", sep = "")
