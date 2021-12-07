@@ -14,7 +14,7 @@
 #' @param fname File name for output (both coefficients and diagnostics)
 #' @import modelsummary
 #' @import stringr
-
+#' @import purrr
 
 kc_regtex <- function(reglist,
                       sep = FALSE, outest = TRUE, outdet = TRUE, xvar_raw = NULL, xvar_lbl = NULL, gof_stat = NULL,
