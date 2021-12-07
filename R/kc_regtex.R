@@ -114,6 +114,13 @@ kc_regtex <- function(reglist,
         }
       }
     }
+
+    mod_iv =  paste(paste(c("IV F-stat", wald_vec),
+                          collapse = " & "),
+                    "\\\\\n", sep = "")
+
+    mod_det = paste(mod_det, mod_iv, sep = "")
+
   }
 
 
