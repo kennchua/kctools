@@ -109,19 +109,11 @@ kc_regtex <- function(reglist,
         if (is.na(fitstat(reglist[[v]], ~ ivwald1))) {
           wald_vec[[v]] = ""
         } else {
-          fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
+          wald_vec[[v]] =
+            fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
         }
       }
     }
-    print(wald_vec)
-    mod_iv =  paste(paste(c("IV F-stat", wald_vec),
-                          collapse = " & "),
-                    "\\\\\n", sep = "")
-    print("Mod_IV")
-    print(mod_iv)
-    mod_det = paste(mod_det, mod_iv, sep = "")
-    print("Mod_DET")
-    print(mod_det)
   }
 
 
