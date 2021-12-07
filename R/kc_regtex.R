@@ -53,7 +53,7 @@ kc_regtex <- function(reglist,
       p.value.Wu.Hausman = list("raw" = "p.value.Wu.Hausman", "clean" = "Wu-Hausman p-value", "fmt" = 3),
       p.value.Sargan = list("raw" = "p.value.Sargan", "clean" = "Sargan p-value", "fmt" = 3)
     ) |>
-    {\(df) if (!is.null(gof_stat)) purrr::keep(df, ~ names(.) %in% gof_stat) else df}()
+    {\(df) if (!is.null(gof_stat)) purrr::keep(df, names(df) %in% gof_stat) else df}()
 
   # Variables to include and their labels
   if (is.null(xvar_raw) == TRUE ) {
