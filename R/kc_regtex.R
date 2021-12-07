@@ -1,6 +1,6 @@
 #' Custom regression table latex output
 #'
-#' Output regression table in latex format, with options for content of output and whether estimates are separate from diagnostics; depends on modelsummary.
+#' Output regression table in latex format, with options for content of output and whether estimates are separate from diagnostics; depends on modelsummary, stringr, and purrr.
 #' @param reglist A list of regression output using base::lm() or fixest::feols()
 #' @param sep Whether to output coefficients estimates separately from model diagnostics
 #' @param outest Whether to output coefficients estimates; default is true
