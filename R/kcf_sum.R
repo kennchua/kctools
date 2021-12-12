@@ -32,7 +32,7 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
                                   .names = "{fn}_{col}"),
                           .by = {{ byvar }}) |>
     tidytable::pivot_longer.(cols = -{{ byvar }},
-                             names_pattern = "(.*)_(.*)",
+                             names_pattern = "([^_]+)_(.*)",
                              names_to = c("stat", "varname"),
                              values_to = c("value")) |>
     tidytable::pivot_wider.(names_from = "stat", values_from = c("value")) |>
