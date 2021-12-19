@@ -2,45 +2,36 @@
 % Please edit documentation in R/kc_regtex.R
 \name{kc_regtex}
 \alias{kc_regtex}
-\title{Custom regression table latex output}
+\title{Export regression table to LaTeX file}
 \usage{
 kc_regtex(
   reglist,
   sep = FALSE,
-  outest = TRUE,
-  outdet = TRUE,
-  xvar_raw = NULL,
-  xvar_lbl = NULL,
+  coef_lbl = NULL,
   gof_stat = NULL,
-  path = "~/Desktop/",
+  fpath = "~/Desktop/",
+  fname = "mod_all.tex",
   fname_est = "mod_est.tex",
-  fname_det = "mod_det.tex",
-  fname = "mod_all.tex"
+  fname_det = "mod_det.tex"
 )
 }
 \arguments{
 \item{reglist}{A list of regression output using base::lm() or fixest::feols()}
 
-\item{sep}{Whether to output coefficients estimates separately from model diagnostics}
+\item{sep}{Whether to output coefficient estimates separately from model diagnostics}
 
-\item{outest}{Whether to output coefficients estimates; default is true}
-
-\item{outdet}{Whether to output model diagnostics; default is true}
-
-\item{xvar_raw}{Vector of raw variables names to keep}
-
-\item{xvar_lbl}{Vector of labels for for raw variables to be kept}
+\item{coef_lbl}{Coefficient estimates to report; using modelsummary's coef_map argument}
 
 \item{gof_stat}{Vector of diagnostics to be included}
 
-\item{path}{File path for output}
+\item{fpath}{File path for output}
+
+\item{fname}{File name for output (both coefficients and diagnostics)}
 
 \item{fname_est}{File name for output (coefficient estimates only)}
 
 \item{fname_det}{File name for output (model diagnostics only)}
-
-\item{fname}{File name for output (both coefficients and diagnostics)}
 }
 \description{
-Output regression table in latex format, with options for content of output and whether estimates are separate from diagnostics; depends on modelsummary.
+Output regression table in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
 }
