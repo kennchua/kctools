@@ -9,16 +9,24 @@
 #' @import openxlsx
 #' @import purrr
 
-kc_figxls <- function(plotlist, sname,
+kc_figxls <- function(plotlist, sname = NULL,
                       fpath = "~/Desktop/", fname = "Plots.xlsx",
                       overwrite = TRUE) {
-
-  if (length(plotlist) != length(sname)) stop("Number of plots must be equal to number of sheet names provided.")
 
   if (overwrite == TRUE | (overwrite == FALSE & !file.exists(paste0(fpath, fname)))) {
     wb_plot <- openxlsx::createWorkbook()
 
-    purrr::walk2(plotlist, sname,
+    # Construct sheet name
+    if (is.null(sname)) {
+      sheetname = paste("Plot", 1:length(plotlist))
+    } else if (!is.null(sname)) {
+      sheetname = sname
+    }
+
+    if (length(plotlist) != length(sheetname)) stop("Number of plots must be equal to number of sheet names provided.")
+
+    # Insert plot to worksheet
+    purrr::walk2(plotlist, sheetname,
                  function(x, y) {
                    openxlsx::addWorksheet(wb_plot, toString(y), gridLines = FALSE)
                    print(x)
@@ -31,7 +39,17 @@ kc_figxls <- function(plotlist, sname,
   } else if (overwrite == FALSE & file.exists(paste0(fpath, fname))) {
     wb_plot <- openxlsx::loadWorkbook(paste0(fpath, fname))
 
-    purrr::walk2(plotlist, sname,
+    # Construct sheet names
+    if (is.null(sname)) {
+      sheetname = paste("Plot", length(names(wb_plot))+1:length(plotlist))
+    } else if (!is.null(sname)) {
+      sheetname = sname
+    }
+
+    if (length(plotlist) != length(sheetname)) stop("Number of plots must be equal to number of sheet names provided.")
+
+    # Insert plot to worksheet
+    purrr::walk2(plotlist, sheetname,
                  function(x, y) {
                    openxlsx::addWorksheet(wb_plot, toString(y), gridLines = FALSE)
                    print(x)
