@@ -31,4 +31,9 @@ library(kctools)
 
 # Spatial analysis tools:
 # kc_st_distance(): create a data frame with pairwise distances of two sf objects
+
+# Tools for presenting results and figures:
+# kc_regtex(): Ouput list of regression results in tex file
+# kc_regxls(): Output list of regression results to Excel sheet 
+# kc_figxls(): Output list of figures to Excel sheets
 ```
