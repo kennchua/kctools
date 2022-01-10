@@ -6,11 +6,13 @@
 
 The `kctools` package includes a suite of helper functions I frequently use in my data wrangling and analysis. 
 
-This includes functions to quickly generate a data frame of summary statistics and tabulations, creating indicators for duplicate observations, functions for spatial analysis, among others. Many of the custom functions were created based on the `dplyr` and `tidyr` packages as well as their counterparts in `tidytable`, a [package](https://markfairbanks.github.io/tidytable/) created by Mark Fairbanks which provides a tidy interface to `data.table` operations. 
+This includes functions to quickly generate a data frame of summary statistics and tabulations, creating indicators for duplicate observations, functions for spatial analysis, among others. Many of the custom functions were created based on the `dplyr` and `tidyr` packages as well as their counterparts in `tidytable`, a [package](https://markfairbanks.github.io/tidytable/) created by Mark Fairbanks which provides a tidy interface to `data.table` operations.
+
+The package also contains tools for storing figures and regression tables in Excel and LaTeX files. These rely on the brilliant `openxlsx` and `modelsummary` packages.
 
 ## Installation
 
-You can install the released version of kctools from  [my Github site](https://github.com/kennchua/kctools) with:
+You can install the latest version of kctools from  [my Github site](https://github.com/kennchua/kctools) with:
 
 ``` r
 devtools::install_github("kennchua/kctools")
