@@ -1,0 +1,131 @@
+#' Export regression table to LaTeX file
+#'
+#' Output regression table in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
+#' @param reglist A list of regression output using base::lm() or fixest::feols()
+#' @param sep Whether to output coefficient estimates separately from model diagnostics
+#' @param coef_lbl Coefficient estimates to report; using modelsummary's coef_map argument
+#' @param gof_stat Vector of diagnostics to be included
+#' @param fpath File path for output
+#' @param fname File name for output (both coefficients and diagnostics)
+#' @param fname_est File name for output (coefficient estimates only)
+#' @param fname_det File name for output (model diagnostics only)
+#' @import modelsummary
+#' @import stringr
+#' @import purrr
+
+kc_regtex <- function(reglist,
+                      sep = FALSE, coef_lbl = NULL, gof_stat = NULL,
+                      fpath = "~/Desktop/", fname = "mod_all.tex", fname_est = "mod_est.tex", fname_det = "mod_det.tex") {
+
+  # Numeric returned as plain rather than enclosed in \num{}
+  options(modelsummary_format_numeric_latex = "plain")
+
+  # Set which gof statistics appear
+  # reg_gof <-
+  #   tibble::tribble(
+  #     ~raw,               ~clean,                        ~fmt,
+  #     "nobs",             "Observations",                  function(x) format(round(x, 3), big.mark=","),
+  #     "nclusters",        "Number of clusters",            function(x) format(round(x, 3), big.mark=","),
+  #     "r.squared",        "\\textit{R}-squared",           2,
+  #     "adj.r.squared",    "Adjusted \\textit{R}-squared",  2,
+  #     "pseudo.r.squared", "Pseudo \\textit{R}-squared",    2,
+  #     "rmse",             "RMSE",                          3,
+  #     "statistic.Weak.instrument", "IV F-stat",            1,
+  #     "p.value.Weak.instrument", "Weak IV p-value",        3,
+  #     "p.value.Wu.Hausman", "Wu-Hausman p-value",          3,
+  #     "p.value.Sargan",   "Sargan p-value",                3) |>
+  #   {\(df) if (!is.null(gof_stat)) filter(df, raw %in% gof_stat) else df}()
+
+  reg_gof <-
+    list(
+      nobs = list("raw" = "nobs", "clean" = "Observations", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+      nclusters = list("raw" = "nclusters", "clean" = "Number of clusters", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+      r.squared = list("raw" = "r.squared", "clean" = "R-squared", "fmt" = 2),
+      adj.r.squared = list("raw" = "adj.r.squared", "clean" = "Adjusted R-squared", "fmt" = 2),
+      within.r.squared = list("raw" = "within.r.squared", "clean" = "Within R-squared", "fmt" = 2),
+      rmse = list("raw" = "rmse", "clean" = "RMSE", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
+      AIC = list("raw" = "AIC", "clean" = "AIC", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
+      BIC = list("raw" = "BIC", "clean" = "BIC", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
+      logLik = list("raw" = "logLik", "clean" = "LogL", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
+      statistic.Weak.instrument = list("raw" = "statistic.Weak.instrument", "clean" = "IV F-stat", "fmt" = 3),
+      p.value.Weak.instrument = list("raw" = "p.value.Weak.instrument", "clean" = "Weak IV p-value", "fmt" = 3),
+      p.value.Wu.Hausman = list("raw" = "p.value.Wu.Hausman", "clean" = "Wu-Hausman p-value", "fmt" = 3),
+      p.value.Sargan = list("raw" = "p.value.Sargan", "clean" = "Sargan p-value", "fmt" = 3)
+    ) |>
+    {\(df) if (!is.null(gof_stat)) purrr::keep(df, names(df) %in% gof_stat) else df}()
+
+  # Generate modelsummary output (if variables are supplied)
+  reg_tex = msummary(reglist,
+                     stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+                     coef_map = coef_lbl, #mod_xvar,
+                     fmt = '%.3f',
+                     gof_map = reg_gof,
+                     output = "latex_tabular")
+
+  # Function to extract body of latex code
+  extract_tbl_body = function(x) {
+    start <- stringr::str_locate(x, "\\\\midrule")[1]
+    end <- stringr::str_locate(x, "\\\\bottomrule")[2]
+    stringr::str_sub(x, start, end)
+  }
+
+  # Extract rows of estimates
+  mod_est = reg_tex |>
+    extract_tbl_body() |>
+    stringr::str_match("(?s)\\\\midrule(.*?)\\\\midrule") |>
+    {\(est) est[[2]]}()
+  # est[[2]] extracts second element of str_match; previously .[[2]] when using %>%
+  # I use str_match() to get the string sandwiched bet. "\midrule"
+  # (?s) is added to match strings that span across line breaks
+
+  # Extract rows of model diagnostics
+  mod_det = reg_tex |>
+    extract_tbl_body() |>
+    stringr::str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") |> # second midrule occurrence
+    {\(det) det[[2]]}() # first element of str_match
+  # det[[2]] extracts second element of str_match; previously .[[2]] when using %>%
+
+  # Add rows for IV F-stat if desired; add flexibility for lists with non-2sls output
+  if ("ivwald" %in% gof_stat) {
+    wald_vec <- vector(mode = "character", length = length(reglist))
+
+    for (v in seq_along(reglist)) {
+      if (class(reglist[[v]]) != "fixest") {
+        wald_vec[[v]] = ""
+      } else if (class(reglist[[v]]) == "fixest") {
+        if (is.na(fitstat(reglist[[v]], ~ ivwald1))) {
+          wald_vec[[v]] = ""
+        } else {
+          wald_vec[[v]] =
+            fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
+        }
+      }
+    }
+
+    mod_iv =  paste(paste(c("IV F-stat", wald_vec),
+                          collapse = " & "),
+                    "\\\\\n", sep = "")
+
+    mod_det = paste(mod_det, mod_iv, sep = "")
+
+  }
+
+
+  # Output latex code for body of table
+  # If sep == FALSE (default), estimates and diagnostics are saved in the same latex code
+  # If sep == TRUE, estimates and diagnostics are saved in separate files
+
+  if (sep == TRUE) {
+    cat(c(mod_est), sep = "\n",
+        file = paste0(fpath, fname_est))
+    cat(c(mod_det), sep = "\n",
+        file = paste0(fpath, fname_det))
+
+  } else if (sep == FALSE) {
+    cat(c(mod_est,
+          "\\\\",
+          mod_det), sep = "\n",
+        file = paste0(fpath, fname))
+  }
+
+}

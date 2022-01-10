@@ -8,11 +8,13 @@ kc_regtex(
   reglist,
   sep = FALSE,
   coef_lbl = NULL,
-  gof_stat = NULL,
+  gof_lbl = NULL,
+  rows_lbl = NULL,
   fpath = "~/Desktop/",
-  fname = "mod_all.tex",
-  fname_est = "mod_est.tex",
-  fname_det = "mod_det.tex"
+  fname = "kc_mod_all.tex",
+  fname_est = "kc_mod_est.tex",
+  fname_det = "kc_mod_det.tex",
+  ivwald = FALSE
 )
 }
 \arguments{
@@ -20,9 +22,11 @@ kc_regtex(
 
 \item{sep}{Whether to output coefficient estimates separately from model diagnostics}
 
-\item{coef_lbl}{Coefficient estimates to report; using modelsummary's coef_map argument}
+\item{coef_lbl}{Model estimates to report; using modelsummary's coef_map argument}
 
-\item{gof_stat}{Vector of diagnostics to be included}
+\item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
+
+\item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
 
 \item{fpath}{File path for output}
 

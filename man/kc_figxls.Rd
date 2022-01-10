@@ -6,9 +6,9 @@
 \usage{
 kc_figxls(
   plotlist,
-  sname,
+  sname = NULL,
   fpath = "~/Desktop/",
-  fname = "Plots.xlsx",
+  fname = "KC_Plots.xlsx",
   overwrite = TRUE
 )
 }

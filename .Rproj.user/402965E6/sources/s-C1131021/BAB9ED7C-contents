@@ -10,7 +10,7 @@
 #' @import purrr
 
 kc_figxls <- function(plotlist, sname = NULL,
-                      fpath = "~/Desktop/", fname = "KC_Plots.xlsx",
+                      fpath = "~/Desktop/", fname = "Plots.xlsx",
                       overwrite = TRUE) {
 
   if (overwrite == TRUE | (overwrite == FALSE & !file.exists(paste0(fpath, fname)))) {

@@ -1,0 +1,1085 @@
+#### Regression Results: LFS
+# Provide descriptive statistics of per-pupil spending in the Philippines
+# Last edited on: September 4, 2021
+# Last edited by: Kenn Chua
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries: ####
+#-------------------------------------------------------------------#
+# 1. Load packages
+pacman::p_load('tidyverse', 'magrittr', 'readxl', 'ggplot2')
+pacman::p_load('patchwork', 'hrbrthemes', 'sf', 'rmapshaper', 'viridis')
+pacman::p_load('fixest', 'modelsummary')
+
+# 2. Setting directories for co-authors and the project
+dir_aut1 <- "/Volumes/GoogleDrive/My Drive/Papers/SchFinPH/"
+#dir_aut2 <- # INSERT CO-AUTHOR DIRECTORY HERE
+#dir_aut3 <- # INSERT CO-AUTHOR DIRECTORY HERE
+dir_main <- dir_aut1 # CHANGE DIRECTORY HERE 
+
+codepath <- paste0(dir_main, "Code/")
+explpath <- paste0(dir_main, "Exploration/")
+manupath <- paste0(dir_main, "Manuscript/")
+rawdatapath <- paste0(dir_main, "Data/")
+buidatapath <- paste0(dir_main, "Data/For_Building/")
+anadatapath <- paste0(dir_main, "Data/For_Analysis/")
+
+
+# 3. Load related data
+# 3a) LFS July and October (sdiv)
+lfs_jul_0916_sdiv <- readRDS(paste0(anadatapath, "LFS_July_SDiv_Analysis.rds"))
+lfs_oct_0916_sdiv <- readRDS(paste0(anadatapath, "LFS_October_SDiv_Analysis.rds")) # up to 2015 only
+
+# 3b) LFS July and October (huc)
+lfs_jul_0916_huc <- readRDS(paste0(anadatapath, "LFS_July_HUC_Analysis.rds"))
+lfs_oct_0916_huc <- readRDS(paste0(anadatapath, "LFS_October_HUC_Analysis.rds"))
+
+# 3c) 
+
+
+#-------------------------------------------------------------------#
+#### B. OLS: JHS Enrollment and Child Labor (July and October; SDiv) ####
+#-------------------------------------------------------------------#
+
+lfs_jhs_jul_sdiv_ols <- list()
+
+
+lfs_jhs_jul_sdiv_ols[[1]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_sdiv)  |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_jul_sdiv_ols[[2]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + jhs_change_sdiv |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_jul_sdiv_ols[[3]] <-  feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                    worked_past7 ~ log(realusd_mooepp_jhs_sdiv)  |
+                                      jhs_mooe_sdiv + svyyr, 
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_jul_sdiv_ols[[4]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + jhs_change_sdiv |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_sdiv_ols <- list()
+
+
+lfs_jhs_oct_sdiv_ols[[1]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_sdiv)  |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_sdiv_ols[[2]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + jhs_change_sdiv |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_oct_sdiv_ols[[3]] <-  feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                    worked_past7 ~ log(realusd_mooepp_jhs_sdiv)  |
+                                      jhs_mooe_sdiv + svyyr, 
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_oct_sdiv_ols[[4]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + jhs_change_sdiv |
+                                     jhs_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_1 <- lfs_jhs_oct_sdiv_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_jhs_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_1_est <- tbl_1 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_1_det <- tbl_1 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Outcomes of School-age Children (12-15)}",
+      "\\label{t_jhs_ols_sdiv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_1_est,
+      "\\\\",
+      tbl_1_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes secondary-school aged children (ages 12 to 15) in the October Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include school division and year fixed effects.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for any household members working overseas.",
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-JHS-OLS-Oct-Sdiv.tex"))
+
+
+
+#-------------------------------------------------------------------#
+#### C. OLS: JHS Enrollment and Child Labor (July and October; HUC) ####
+#-------------------------------------------------------------------#
+lfs_jhs_jul_huc_ols <- list()
+
+
+lfs_jhs_jul_huc_ols[[1]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_huc)  |
+                                    huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_jul_huc_ols[[2]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   ed_schatt ~ log(realusd_mooepp_jhs_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_jul_huc_ols[[3]] <-  feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                    worked_past7 ~ log(realusd_mooepp_jhs_huc)  |
+                                     huc_2018 + svyyr, 
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_jul_huc_ols[[4]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ log(realusd_mooepp_jhs_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_huc_ols <- list()
+
+
+lfs_jhs_oct_huc_ols[[1]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_jhs_huc)  |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_huc_ols[[2]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_jhs_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+lfs_jhs_oct_huc_ols[[3]] <-  feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ log(realusd_mooepp_jhs_huc)  |
+                                     huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_oct_huc_ols[[4]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ log(realusd_mooepp_jhs_huc) + factor(r_age) + gender  + hh_hasofw + hh_size  |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_2 <- lfs_jhs_oct_huc_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_jhs_huc)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_2_est <- tbl_2 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_2_det <- tbl_2 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Outcomes of School-age Children (12-15)}",
+      "\\label{t_jhs_ols_huc}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_2_est,
+      "\\\\",
+      tbl_2_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes secondary-school aged children (ages 12 to 15) in the October Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include city-province and year fixed effects.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for any household members working overseas.",
+      "Standard errors clustered at the city-province level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-JHS-OLS-Oct-HUC.tex"))
+
+
+
+
+#-------------------------------------------------------------------#
+#### D. IV: JHS Enrollment and Child Labor (July and October; SDiv) ####
+#-------------------------------------------------------------------#
+lfs_jhs_jul_sdiv_sls <- list()
+
+
+lfs_jhs_jul_sdiv_sls[[1]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_jul_sdiv_sls[[2]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_jul_sdiv_sls[[3]] <-  feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                    worked_past7 ~ ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                      jhs_mooe_sdiv + svyyr |
+                                      log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_jul_sdiv_sls[[4]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_sdiv_sls <- list()
+
+
+lfs_jhs_oct_sdiv_sls[[1]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_sdiv_sls[[2]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_oct_sdiv_sls[[3]] <-  feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                    worked_past7 ~ ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                      jhs_mooe_sdiv + svyyr |
+                                      log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_oct_sdiv_sls[[4]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011),
+                                   worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_sdiv:svyyr + ratio_tch_jhs_sdiv:svyyr + ratio_crm_jhs_sdiv:svyyr + ratio_grd_jhs_sdiv:svyyr |
+                                     jhs_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_2 <- lfs_jhs_oct_sdiv_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_jhs_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_2_est <- tbl_2 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_2_det <- tbl_2 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_2_ivf <- paste(paste("\nIV F-stat",
+                         fitstat(lfs_jhs_oct_sdiv_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_oct_sdiv_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_oct_sdiv_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_oct_sdiv_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         sep = " & "),
+                   "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Outcomes of School-aged Children (12-15)}",
+      "\\label{t_lfs_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_2_est,
+      "\\\\",
+      tbl_2_ivf,
+      tbl_2_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes secondary-school aged children (ages 12 to 15) in the October Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include school division and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for household members working overseas.",
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-JHS-IV-Oct-SDiv.tex"))
+
+
+#-------------------------------------------------------------------#
+#### E. IV: JHS Enrollment and Child Labor (July and October; HUC) ####
+#-------------------------------------------------------------------#
+lfs_jhs_jul_huc_sls <- list()
+
+
+lfs_jhs_jul_huc_sls[[1]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                  weights = ~ r_pwgt) 
+
+lfs_jhs_jul_huc_sls[[2]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                  weights = ~ r_pwgt) 
+
+lfs_jhs_jul_huc_sls[[3]] <-  feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                     huc_2018 + svyyr |
+                                     log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_jul_huc_sls[[4]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                  weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_huc_sls <- list()
+
+
+lfs_jhs_oct_huc_sls[[1]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   ed_schatt ~ ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                     log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                   weights = ~ r_pwgt) 
+
+
+lfs_jhs_oct_huc_sls[[2]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                     log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                   weights = ~ r_pwgt) 
+
+lfs_jhs_oct_huc_sls[[3]] <-  feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                    worked_past7 ~ ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                     huc_2018 + svyyr |
+                                      log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                    weights = ~ r_pwgt) 
+
+lfs_jhs_oct_huc_sls[[4]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=12 & r_age <=15 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_jhs_huc:svyyr + ratio_tch_jhs_huc:svyyr + ratio_crm_jhs_huc:svyyr + ratio_grd_jhs_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                     log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                   weights = ~ r_pwgt) 
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_2 <- lfs_jhs_jul_huc_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_jhs_huc)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_2_est <- tbl_2 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_2_det <- tbl_2 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_2_ivf <- paste(paste("\nIV F-stat",
+                         fitstat(lfs_jhs_jul_huc_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_jul_huc_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_jul_huc_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_jhs_jul_huc_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         sep = " & "),
+                   "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Outcomes of School-aged Children (12-15)}",
+      "\\label{t_lfs_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_2_est,
+      "\\\\",
+      tbl_2_ivf,
+      tbl_2_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes secondary-school aged children (ages 12 to 15) in the July Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include city-province and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for household members working overseas.",
+      "Standard errors clustered at the city-province level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-JHS-IV-Jul-HUC.tex"))
+
+
+
+#-------------------------------------------------------------------#
+#### F. OLS: ES Enrollment and Child Labor (July and October; SDiv) ####
+#-------------------------------------------------------------------#
+
+lfs_es_jul_sdiv_ols <- list()
+
+
+lfs_es_jul_sdiv_ols[[1]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_es_sdiv)  |
+                                    sdiv_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_es_jul_sdiv_ols[[2]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_es_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + es_change_sdiv |
+                                    sdiv_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_es_jul_sdiv_ols[[3]] <-  feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                    worked_past7 ~ log(realusd_mooepp_es_sdiv)  |
+                                     sdiv_2018 + svyyr, 
+                                    weights = ~ r_pwgt) 
+
+lfs_es_jul_sdiv_ols[[4]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   worked_past7 ~ log(realusd_mooepp_es_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + es_change_sdiv |
+                                     sdiv_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_es_oct_sdiv_ols <- list()
+
+
+lfs_es_oct_sdiv_ols[[1]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_es_sdiv)  |
+                                     es_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+lfs_es_oct_sdiv_ols[[2]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ log(realusd_mooepp_es_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + es_change_sdiv |
+                                      es_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_es_oct_sdiv_ols[[3]] <-  feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                    worked_past7 ~ log(realusd_mooepp_es_sdiv)  |
+                                      es_mooe_sdiv + svyyr, 
+                                    weights = ~ r_pwgt) 
+
+lfs_es_oct_sdiv_ols[[4]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   worked_past7 ~ log(realusd_mooepp_es_sdiv) + factor(r_age) + gender  + hh_hasofw + hh_size + es_change_sdiv |
+                                     es_mooe_sdiv + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_11 <- lfs_es_jul_sdiv_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_es_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_11_est <- tbl_11 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_11_det <- tbl_11 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Outcomes of School-age Children (6-11)}",
+      "\\label{t_lfs_ols}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_11_est,
+      "\\\\",
+      tbl_11_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes elementary-school aged children (ages 6 to 11) in the July Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include school division and year fixed effects.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for any household members working overseas.",
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-ES-OLS-Jul-Sdiv.tex"))
+
+
+#-------------------------------------------------------------------#
+#### G. OLS: ES Enrollment and Child Labor (July and October; HUC) ####
+#-------------------------------------------------------------------#
+lfs_es_jul_huc_ols <- list()
+
+
+lfs_es_jul_huc_ols[[1]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_es_huc)  |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+lfs_es_jul_huc_ols[[2]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_es_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+lfs_es_jul_huc_ols[[3]] <-  feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ log(realusd_mooepp_es_huc)  |
+                                     huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_es_jul_huc_ols[[4]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ log(realusd_mooepp_es_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+lfs_es_oct_huc_ols <- list()
+
+
+lfs_es_oct_huc_ols[[1]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_es_huc)  |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+lfs_es_oct_huc_ols[[2]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ log(realusd_mooepp_es_huc) + factor(r_age) + gender  + hh_hasofw + hh_size |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+lfs_es_oct_huc_ols[[3]] <-  feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ log(realusd_mooepp_es_huc)  |
+                                     huc_2018 + svyyr, 
+                                   weights = ~ r_pwgt) 
+
+lfs_es_oct_huc_ols[[4]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ log(realusd_mooepp_es_huc) + factor(r_age) + gender  + hh_hasofw + hh_size  |
+                                    huc_2018 + svyyr, 
+                                  weights = ~ r_pwgt) 
+
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_12 <- lfs_es_jul_huc_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_es_huc)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_12_est <- tbl_12 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_12_det <- tbl_12 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Outcomes of School-age Children (6-11)}",
+      "\\label{t_lfs_ols}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_12_est,
+      "\\\\",
+      tbl_12_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes elementary-school aged children (ages 6 to 11) in the July Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include city-province and year fixed effects.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for any household members working overseas.",
+      "Standard errors clustered at the city-province level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-ES-OLS-Jul-HUC.tex"))
+
+
+#-------------------------------------------------------------------#
+#### H. IV: ES Enrollment and Child Labor (July and October; SDiv) ####
+#-------------------------------------------------------------------#
+lfs_es_jul_sdiv_sls <- list()
+
+
+lfs_es_jul_sdiv_sls[[1]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_es_jul_sdiv_sls[[2]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_es_jul_sdiv_sls[[3]] <-  feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                    worked_past7 ~ ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                      es_mooe_sdiv + svyyr |
+                                      log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                    weights = ~ r_pwgt) 
+
+lfs_es_jul_sdiv_sls[[4]] <- feols(data = lfs_jul_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+lfs_es_oct_sdiv_sls <- list()
+
+
+lfs_es_oct_sdiv_sls[[1]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+lfs_es_oct_sdiv_sls[[2]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+lfs_es_oct_sdiv_sls[[3]] <-  feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                    worked_past7 ~ ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                      es_mooe_sdiv + svyyr |
+                                      log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                    weights = ~ r_pwgt) 
+
+lfs_es_oct_sdiv_sls[[4]] <- feols(data = lfs_oct_0916_sdiv %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011),
+                                   worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_sdiv:svyyr + ratio_tch_es_sdiv:svyyr + ratio_crm_es_sdiv:svyyr + ratio_grd_es_sdiv:svyyr |
+                                     es_mooe_sdiv + svyyr |
+                                     log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                   weights = ~ r_pwgt) 
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_13 <- lfs_es_jul_sdiv_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_es_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_13_est <- tbl_13 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_13_det <- tbl_13 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_13_ivf <- paste(paste("\nIV F-stat",
+                         fitstat(lfs_es_jul_sdiv_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_jul_sdiv_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_jul_sdiv_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_jul_sdiv_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         sep = " & "),
+                   "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Outcomes of School-aged Children (6-11)}",
+      "\\label{t_lfs_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_13_est,
+      "\\\\",
+      tbl_13_ivf,
+      tbl_13_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes elementary-school aged children (ages 6 to 11) in the July Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include school division and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for household members working overseas.",
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-ES-IV-Jul-SDiv.tex"))
+
+
+#-------------------------------------------------------------------#
+#### I. IV: ES Enrollment and Child Labor (July and October; HUC) ####
+#-------------------------------------------------------------------#
+lfs_es_jul_huc_sls <- list()
+
+
+lfs_es_jul_huc_sls[[1]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+lfs_es_jul_huc_sls[[2]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+lfs_es_jul_huc_sls[[3]] <-  feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                     huc_2018 + svyyr |
+                                     log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                   weights = ~ r_pwgt) 
+
+lfs_es_jul_huc_sls[[4]] <- feols(data = lfs_jul_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+
+lfs_es_oct_huc_sls <- list()
+
+
+lfs_es_oct_huc_sls[[1]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+
+lfs_es_oct_huc_sls[[2]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  ed_schatt ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+lfs_es_oct_huc_sls[[3]] <-  feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                   worked_past7 ~ ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                     huc_2018 + svyyr |
+                                     log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                   weights = ~ r_pwgt) 
+
+lfs_es_oct_huc_sls[[4]] <- feols(data = lfs_oct_0916_huc %>% filter(r_age >=6 & r_age <=11 & svyyr >= 2011 & svyyr <= 2016),
+                                  worked_past7 ~ factor(r_age) + gender  + hh_hasofw + hh_size + ratio_sch_es_huc:svyyr + ratio_tch_es_huc:svyyr + ratio_crm_es_huc:svyyr + ratio_grd_es_huc:svyyr |
+                                    huc_2018 + svyyr |
+                                    log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                  weights = ~ r_pwgt) 
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_14 <- lfs_es_oct_huc_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_es_huc)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_14_est <- tbl_14 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_14_det <- tbl_14 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_14_ivf <- paste(paste("\nIV F-stat",
+                         fitstat(lfs_es_oct_huc_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_oct_huc_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_oct_huc_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         fitstat(lfs_es_oct_huc_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                         sep = " & "),
+                   "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Outcomes of School-aged Children (6-11)}",
+      "\\label{t_lfs_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Enrollment} & \\multicolumn{2}{c}{Child Labor} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}", 
+      " & (1) & (2) & (3) & (4) \\\\",
+      "\\midrule",
+      tbl_14_est,
+      "\\\\",
+      tbl_14_ivf,
+      tbl_14_det,
+      "Demographic controls & No & Yes & No & Yes \\\\",
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes secondary-school aged children (ages 6 to 11) in the October Labor Force Surveys (LFS) 2011-2016.",
+      "The dependent variables are indicators of enrollment in school and having worked in the past 7 days.",
+      "All specifications include city-province and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Demographic controls include gender, age dummies, household size, and an indicator for household members working overseas.",
+      "Standard errors clustered at the city-province level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/LFS-ES-IV-Oct-HUC.tex"))
+
+
+#-------------------------------------------------------------------#
+#### Z. Event Study: Enrollment and Child Labor in High vs. Low Growth ####
+#-------------------------------------------------------------------#
+# 1. Define time to treatment variable
+lfs_0916_wfin %<>%
+  mutate(time_to_treat = svyyr - 2013)
+
+trial<-
+feols(data = lfs_0916_wfin %>% filter(r_age >=16 & r_age <=18 & svyyr >= 2010),
+       worked_past7 ~ i(time_to_treat, mooepp_jhs_high_growth, ref = -1) |
+        sdiv_2007 + svyyr)
+
+
+fixest::iplot(trial, 
+      xlab = 'Time to treatment',
+      main = 'Event study: Staggered treatment (TWFE)')

@@ -1,27 +1,27 @@
 {
-    "id": "C675820A",
-    "path": "/Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_figxls.R",
-    "project_path": "R/kc_figxls.R",
+    "id": "698D62E9",
+    "path": "/Volumes/GoogleDrive/My Drive/Git/kctools/R/kc_regxls.R",
+    "project_path": "R/kc_regxls.R",
     "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1639941882933.0,
+    "created": 1641784803963.0,
     "source_on_save": false,
     "relative_order": 2,
     "properties": {
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "30,79",
-        "scrollLine": "20"
+        "cursorPosition": "134,0",
+        "scrollLine": "63"
     },
     "folds": "",
-    "lastKnownWriteTime": 1639886604,
+    "lastKnownWriteTime": 1641783909,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1639886604,
+    "last_content_update": 1641783909,
     "read_only": false,
     "read_only_alternatives": []
 }

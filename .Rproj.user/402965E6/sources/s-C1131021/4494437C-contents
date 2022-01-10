@@ -1,0 +1,680 @@
+#### Regression Results: NAT and NCAE
+# Provide descriptive statistics of per-pupil spending in the Philippines
+# Last edited on: July 12, 2020
+# Last edited by: Kenn Chua
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries: ####
+#-------------------------------------------------------------------#
+# 1. Load packages
+pacman::p_load('tidyverse', 'magrittr', 'readxl', 'ggplot2')
+pacman::p_load('patchwork', 'hrbrthemes', 'viridis', 'ggsci')
+pacman::p_load('fixest', 'modelsummary')
+
+# 2. Setting directories for co-authors and the project
+dir_aut1 <- "/Volumes/GoogleDrive/My Drive/Papers/SchFinPH/"
+#dir_aut2 <- # INSERT CO-AUTHOR DIRECTORY HERE
+#dir_aut3 <- # INSERT CO-AUTHOR DIRECTORY HERE
+dir_main <- dir_aut1 # CHANGE DIRECTORY HERE 
+
+codepath <- paste0(dir_main, "Code/")
+explpath <- paste0(dir_main, "Exploration/")
+manupath <- paste0(dir_main, "Manuscript/")
+rawdatapath <- paste0(dir_main, "Data/")
+buidatapath <- paste0(dir_main, "Data/For_Building/")
+anadatapath <- paste0(dir_main, "Data/For_Analysis/")
+
+
+# 3. Load related data
+nat_g6 <- readRDS(paste0(anadatapath, "NATG6_SDiv_Analysis.rds"))
+ncae_g9 <- readRDS(paste0(anadatapath, "NCAEG9_SDiv_Analysis.rds"))
+nat_g10 <- readRDS(paste0(anadatapath, "NATG10_SDiv_Analysis.rds"))
+
+#-------------------------------------------------------------------#
+#### B. OLS and IV: NAT G6 by Subject ####
+#-------------------------------------------------------------------#
+# 1. Overall, Math, Science, English, Filipino (OLS)
+natg6_ols <- list()
+
+natg6_ols[[1]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_all_mps ~ log(realusd_mooepp_es_sdiv) |
+                          schid_uniq + year,
+                        weights = ~ enr_g6_tot)
+
+natg6_ols[[2]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_mat_mps ~ log(realusd_mooepp_es_sdiv) |
+                          schid_uniq + year,
+                        weights = ~ enr_g6_tot)
+
+natg6_ols[[3]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_sci_mps ~ log(realusd_mooepp_es_sdiv) |
+                          schid_uniq + year,
+                        weights = ~ enr_g6_tot)
+
+natg6_ols[[4]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_eng_mps ~ log(realusd_mooepp_es_sdiv) |
+                          schid_uniq + year,
+                        weights = ~ enr_g6_tot)
+
+natg6_ols[[5]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_fil_mps ~ log(realusd_mooepp_es_sdiv) |
+                          schid_uniq + year,
+                        weights = ~ enr_g6_tot)
+
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_natg6_ols <- natg6_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_es_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_natg6_est <- tbl_natg6_ols %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_natg6_det <- tbl_natg6_ols %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Grade 6 NAT Test Scores}",
+      "\\label{t_natg6_ols}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      " & Overall & Math & Science & English & Filipino \\\\",
+      "\\midrule",
+      tbl_natg6_est,
+      "\\\\",
+      tbl_natg6_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes 5,846 elementary schools in Regions III, IV-A, and NCR (59 school divisions).",
+      "The dependent variables are mean percentage scores in the National Achievement Test (NAT).",
+      "All specifications include school and year fixed effects.", 
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NATG6-OLS-Sdiv.tex"))
+
+
+
+
+# 2. Overall, Math, Science, English, Filipino (IV)
+natg6_sls <- list()
+
+natg6_sls[[1]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_all_mps ~ ratio_sch_es_sdiv:year + ratio_tch_es_sdiv:year + ratio_crm_es_sdiv:year + ratio_grd_es_sdiv:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                        weights = ~ enr_g6_tot)
+
+
+natg6_sls[[2]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_mat_mps ~ ratio_sch_es_sdiv:year + ratio_tch_es_sdiv:year + ratio_crm_es_sdiv:year + ratio_grd_es_sdiv:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                        weights = ~ enr_g6_tot)
+
+natg6_sls[[3]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_sci_mps ~ ratio_sch_es_sdiv:year + ratio_tch_es_sdiv:year + ratio_crm_es_sdiv:year + ratio_grd_es_sdiv:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                        weights = ~ enr_g6_tot)
+
+natg6_sls[[4]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_eng_mps ~ ratio_sch_es_sdiv:year + ratio_tch_es_sdiv:year + ratio_crm_es_sdiv:year + ratio_grd_es_sdiv:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                        weights = ~ enr_g6_tot)
+
+natg6_sls[[5]] <- feols(data = nat_g6 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg6_fil_mps ~ ratio_sch_es_sdiv:year + ratio_tch_es_sdiv:year + ratio_crm_es_sdiv:year + ratio_grd_es_sdiv:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                        weights = ~ enr_g6_tot)
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_natg6_sls <- natg6_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_es_sdiv)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_natg6_est <- tbl_natg6_sls %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_natg6_det <- tbl_natg6_sls %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_natg6_ivf <- paste(paste("\nIV F-stat",
+                             fitstat(natg6_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg6_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg6_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg6_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg6_sls[[5]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             sep = " & "),
+                       "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Grade 6 NAT Test Scores}",
+      "\\label{t_natg6_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      " & Overall & Math & Science & English & Filipino \\\\",
+      "\\midrule",
+      tbl_natg6_est,
+      "\\\\",
+      tbl_natg6_ivf,
+      tbl_natg6_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes 5,846 elementary schools in Regions III, IV-A, and NCR (59 school divisions).",
+      "The dependent variables are mean percentage scores in the National Achievement Test (NAT).",
+      "All specifications include school and year fixed effects.", 
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NATG6-IV-Sdiv.tex"))
+
+
+
+#-------------------------------------------------------------------#
+#### C. Regression: NAT G10 by Subject ####
+#-------------------------------------------------------------------#
+# 1. Overall, Math, Science, English, Filipino (OLS)
+natg10_ols <- list()
+
+natg10_ols[[1]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_all_mps ~ log(realusd_mooepp_jhs_sch) |
+                          schid_uniq + year,
+                        weights = ~ enr_g10_tot)
+
+natg10_ols[[2]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_mat_mps ~ log(realusd_mooepp_jhs_sch) |
+                          schid_uniq + year,
+                        weights = ~ enr_g10_tot)
+
+natg10_ols[[3]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_sci_mps ~ log(realusd_mooepp_jhs_sch) |
+                          schid_uniq + year,
+                        weights = ~ enr_g10_tot)
+
+natg10_ols[[4]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_eng_mps ~ log(realusd_mooepp_jhs_sch) |
+                          schid_uniq + year,
+                        weights = ~ enr_g10_tot)
+
+natg10_ols[[5]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_fil_mps ~ log(realusd_mooepp_jhs_sch) |
+                          schid_uniq + year,
+                        weights = ~ enr_g10_tot)
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_natg10_ols <- natg10_ols %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("log(realusd_mooepp_jhs_sch)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_natg10_est <- tbl_natg10_ols %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_natg10_det <- tbl_natg10_ols %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Correlation of PPOE with Grade 10 NAT Test Scores}",
+      "\\label{t_natg10_ols}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      " & Overall & Math & Science & English & Filipino \\\\",
+      "\\midrule",
+      tbl_natg10_est,
+      "\\\\",
+      tbl_natg10_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS regression estimates.",
+      "The sample includes 1,245 junior high schools in Regions III, IV-A, and NCR (59 school divisions).",
+      "The dependent variables are mean percentage scores in the National Achievement Test (NAT).",
+      "All specifications include school and year fixed effects.", 
+      "Standard errors clustered at the school level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NATG10-OLS-Sch.tex"))
+
+# 2. Overall, Math, Science, English, Filipino (IV)
+natg10_sls <- list()
+
+natg10_sls[[1]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_all_mps ~ ratio_tch_jhs_sch:year + ratio_crm_jhs_sch:year + ratio_grd_jhs_sch:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_jhs_sch) ~ prcst_sim_mooe_jhs_sch,
+                        weights = ~ enr_g10_tot)
+
+
+natg10_sls[[2]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_mat_mps ~ ratio_tch_jhs_sch:year + ratio_crm_jhs_sch:year + ratio_grd_jhs_sch:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_jhs_sch) ~ prcst_sim_mooe_jhs_sch,
+                        weights = ~ enr_g10_tot)
+
+natg10_sls[[3]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_sci_mps ~ ratio_tch_jhs_sch:year + ratio_crm_jhs_sch:year + ratio_grd_jhs_sch:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_jhs_sch) ~ prcst_sim_mooe_jhs_sch,
+                        weights = ~ enr_g10_tot)
+
+natg10_sls[[4]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_eng_mps ~ ratio_tch_jhs_sch:year + ratio_crm_jhs_sch:year + ratio_grd_jhs_sch:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_jhs_sch) ~ prcst_sim_mooe_jhs_sch,
+                        weights = ~ enr_g10_tot)
+
+natg10_sls[[5]] <- feols(data = nat_g10 %>% filter(year >= 2011 & balanced_ind == 1),
+                        natg10_fil_mps ~ ratio_tch_jhs_sch:year + ratio_crm_jhs_sch:year + ratio_grd_jhs_sch:year |
+                          schid_uniq + year |
+                          log(realusd_mooepp_jhs_sch) ~ prcst_sim_mooe_jhs_sch,
+                        weights = ~ enr_g10_tot)
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_natg10_sls <- natg10_sls %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_jhs_sch)" = "Log PPOE"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_natg10_est <- tbl_natg10_sls %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PPOE", "PPOE (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_natg10_det <- tbl_natg10_sls %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_natg10_ivf <- paste(paste("\nIV F-stat",
+                             fitstat(natg10_sls[[1]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg10_sls[[2]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg10_sls[[3]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg10_sls[[4]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             fitstat(natg10_sls[[5]], ~ ivwald1)$ivwald1$stat %>% round(digits = 2),
+                             sep = " & "),
+                       "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of PPOE on Grade 10 NAT Test Scores}",
+      "\\label{t_natg10_iv}", 
+      "\\begin{tabularx}{0.9\\textwidth}{l YYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      " & Overall & Math & Science & English & Filipino \\\\",
+      "\\midrule",
+      tbl_natg10_est,
+      "\\\\",
+      tbl_natg10_ivf,
+      tbl_natg10_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} Two-stage least squares estimates.",
+      "The sample includes 1,245 junior high schools in Regions III, IV-A, and NCR (59 school divisions).",
+      "The dependent variables are mean percentage scores in the National Achievement Test (NAT).",
+      "All specifications include school and year fixed effects.", 
+      "Standard errors clustered at the school level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NATG10-IV-Sch.tex"))
+
+
+#-------------------------------------------------------------------#
+#### Z. Check ####
+#-------------------------------------------------------------------#
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_natg6 <- natg6_olsiv_res %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_es)" = "Log PBB",
+                        "log(realusd_mooepp_es)" = "Log PBB"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_natg6_est <- tbl_natg6 %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PBB", "Per-pupil Budget (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_natg6_det <- tbl_natg6 %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+tbl_natg6_ivf <- paste(paste("\nIV F-stat",
+                             " ",
+                             fitstat(natg6_olsiv_res[[2]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                             " ",
+                             fitstat(natg6_olsiv_res[[4]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                             " ",
+                             fitstat(natg6_olsiv_res[[6]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                             sep = " & "),
+                       "\\\\\n", sep = "")
+
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of Per-pupil Budgets on Grade 6 Achievement Test Scores}",
+      "\\label{t_natg6_iv}", 
+      "\\begin{tabularx}{0.99\\textwidth}{l YYYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Science} & \\multicolumn{2}{c}{Math} & \\multicolumn{2}{c}{English} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5} \\cmidrule(lr){6-7}", 
+      " & OLS & IV & OLS & IV & OLS & IV \\\\",
+      "\\midrule",
+      tbl_natg6_est,
+      "\\\\",
+      tbl_natg6_ivf,
+      tbl_natg6_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS and two-stage least squares estimates.",
+      "The dependent variables are the mean percentage score in Science, Math, and English Grade 6 National Achievement Test (NAT).",
+      "The sample includes primary schools in Region III, Region IVA, and National Capital Region from 2011-2014.",
+      "All specifications include school and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NATG6 - IV.tex"))
+
+
+
+# 3. 
+
+# 4. 
+
+# 5.
+
+
+
+
+
+#-------------------------------------------------------------------#
+#### C. Regression: NCAE G9 by Subject ####
+#-------------------------------------------------------------------#
+# 1. 
+
+ncae_olsiv_res <- list()
+ncae_olsiv_res[[1]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_sci_mps ~ log(realusd_mooepp_jhs) + log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year)
+
+ncae_olsiv_res[[2]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_sci_mps ~ log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year |
+                               log(realusd_mooepp_jhs) ~ prcst_simmooe_jhs)
+  
+
+ncae_olsiv_res[[3]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_math_mps ~ log(realusd_mooepp_jhs) + log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year)
+
+
+ncae_olsiv_res[[4]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_math_mps ~ log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year |
+                               log(realusd_mooepp_jhs) ~ prcst_simmooe_jhs)
+  
+ncae_olsiv_res[[5]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_read_mps ~ log(realusd_mooepp_jhs) + log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year)
+
+ncae_olsiv_res[[6]] <- feols(data = ncae_g9_wfin %>% filter(year <= 2016 & balanced_ind == 1),
+                             ncaeg9_read_mps ~ log(realusd_ps_sec) + ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+                               schid_uniq + year |
+                               log(realusd_mooepp_jhs) ~ prcst_simmooe_jhs)
+
+
+# Latex Table 
+model_detail <- modelsummary::gof_map
+model_detail$clean[[1]] <- "Observations" # Modify how "Num.Obs." is displayed on the table
+
+get_tbl_body <- function(x) {
+  start <- str_locate(x, "\\\\midrule")[1] 
+  end <- str_locate(x, "\\\\bottomrule")[2] 
+  str_sub(x, start, end) 
+}
+
+
+tbl_ncae <- ncae_olsiv_res %>% 
+  msummary(stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
+           coef_map = c("fit_log(realusd_mooepp_jhs)" = "Log PBB",
+                        "log(realusd_mooepp_jhs)" = "Log PBB"),
+           fmt = '%.3f',
+           gof_map = model_detail,
+           gof_omit = 'FE|Clust|Std.|R2|IC|Log|Adj|se_type|p\\.value|Sigma',
+           output = "latex")
+
+tbl_ncae_est <- tbl_ncae %>% 
+  get_tbl_body() %>%  
+  str_replace("Log PBB", "Per-pupil Budget (in logs)") %>% 
+  str_match("(?s)\\\\midrule(.*?)\\\\midrule") %>% 
+  .[[2]] # second element of str_match
+# I use str_match() to get the string sandwiched bet. "\midrule"
+# (?s) is added to match strings that span across line breaks 
+
+tbl_ncae_det <- tbl_ncae %>% 
+  get_tbl_body() %>% 
+  str_match("(?s)(?:.*\\\\midrule){2}(.*?)\\\\bottomrule") %>% # second midrule occurrence 
+  .[[2]] # first element of str_match
+
+
+
+tbl_ncae_ivf <- paste(paste("\nIV F-stat",
+                            " ",
+                            fitstat(ncae_olsiv_res[[2]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                            " ",
+                            fitstat(ncae_olsiv_res[[4]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                            " ",
+                            fitstat(ncae_olsiv_res[[6]], ~ ivf1)$ivf1$stat %>% round(digits = 2),
+                            sep = " & "),
+                      "\\\\\n", sep = "")
+
+cat(c("\\begin{table}[!htb]",
+      "\\begin{center}",
+      "\\begin{threeparttable}",
+      "\\caption{Effects of Per-pupil Budgets on Grade 9 Achievement Test Scores}",
+      "\\label{t_ncae_iv}", 
+      "\\begin{tabularx}{0.99\\textwidth}{l YYYYYY}", # defined a Y alignment that centers the values 
+      "\\toprule",
+      "&\\multicolumn{2}{c}{Science} & \\multicolumn{2}{c}{Math} & \\multicolumn{2}{c}{Reading} \\\\",
+      "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5} \\cmidrule(lr){6-7}", 
+      " & OLS & IV & OLS & IV & OLS & IV \\\\",
+      "\\midrule",
+      tbl_ncae_est,
+      "\\\\",
+      tbl_ncae_ivf,
+      tbl_ncae_det,
+      "\\bottomrule",
+      "\\end{tabularx}",
+      "\\begin{tablenotes}[para, flushleft]",
+      "\\footnotesize",
+      "\\textit{Notes:} OLS and two-stage least squares estimates.",
+      "The dependent variables are the mean percentage score in Science, Math, and Reading Grade 9 National Career Aptitude Examination (NCAE).",
+      "The sample includes secondary schools in Region III, Region IVA, and National Capital Region from 2011-2017.",
+      "All specifications include school and year fixed effects, as well as interactions of baseline formula inputs with survey year.", 
+      "Standard errors clustered at the school division level are reported in parentheses.",
+      "* \\(p<0.10\\), ** \\(p<0.05\\), *** \\(p<0.01\\)",
+      "\\end{tablenotes}",
+      "\\end{threeparttable}",
+      "\\end{center}",
+      "\\end{table}"), sep = "\n",
+    file = paste0(explpath, "Tables/NCAE - IV.tex"))
+
+
+
+# 2. 
+
+# 3. 
+
+# 4. 
+
+# 5.
+
+#-------------------------------------------------------------------#
+#### C. Event Study: Enrollment and Child Labor in High vs. Low Growth ####
+#-------------------------------------------------------------------#
+# Not yielding any results; I have pre-trends. Do per-school?
+# 1. Define time to treatment variable
+ncae_g9_wfin %<>%
+  mutate(time_to_treat = year - 2013)
+
+trial<-
+  feols(data = ncae_g9_wfin %>% filter(year <= 2017 & balanced_ind == 1),
+        ncaeg9_math_mps ~ i(time_to_treat, mooepp_jhs_high_growth2, ref = -1) +
+          ratio_school_jhs:year + ratio_class_jhs:year + ratio_teach_jhs:year + ratio_grads_jhs:year |
+          schid_uniq + year,
+        ~enr_g9_tot)
+
+
+fixest::iplot(trial, 
+              xlab = 'Time to treatment',
+              main = 'Event study: Staggered treatment (TWFE)')
+
+
+nat_g6_wfin %<>%
+  mutate(time_to_treat = year - 2013)
+
+trial <- 
+feols(data = nat_g6_wfin %>% filter(year >= 2011  & balanced_ind == 1),
+      natg6_all_mps ~ i(time_to_treat, mooepp_es_high_growth2, ref = -1) +
+        ratio_school_es:year + ratio_class_es:year + ratio_teach_es:year + ratio_grads_es:year |
+        schid_uniq + year)

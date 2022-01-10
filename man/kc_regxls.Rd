@@ -8,10 +8,11 @@ kc_regxls(
   reglist,
   sname = NULL,
   coef_lbl = NULL,
-  gof_stat = NULL,
+  gof_lbl = NULL,
   rows_lbl = NULL,
   fpath = "~/Desktop/",
-  fname = "Regs.xlsx",
+  fname = "kc_mod_all.xlsx",
+  ivwald = FALSE,
   overwrite = TRUE
 )
 }
@@ -20,9 +21,9 @@ kc_regxls(
 
 \item{sname}{A string for the sheet title}
 
-\item{coef_lbl}{Coefficient estimates to report; using modelsummary's coef_map argument}
+\item{coef_lbl}{Model estimates to report; using modelsummary's coef_map argument}
 
-\item{gof_stat}{Vector of diagnostics to be included}
+\item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
 
 \item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
 
@@ -30,8 +31,10 @@ kc_regxls(
 
 \item{fname}{File name for output}
 
+\item{ivwald}{Report Kleibergen-Paap F-stat; using fixest's ivwald statistic}
+
 \item{overwrite}{If TRUE then overwrites file; if FALSE then appends sheet on existing file}
 }
 \description{
-Export a list of plots to individual sheets within an Excel file; depends on modelsummary, openxlsx, and purrr.
+Export a list of plots to individual sheets within an Excel file; depends on modelsummary, openxlsx, dplyr, and purrr.
 }
