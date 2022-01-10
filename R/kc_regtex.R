@@ -94,24 +94,6 @@ kc_regtex <- function(reglist, sep = FALSE,
   #     "p.value.Sargan",   "Sargan p-value",                3) |>
   #   {\(df) if (!is.null(gof_stat)) filter(df, raw %in% gof_stat) else df}()
 
-  # reg_gof <-
-  #   list(
-  #     nobs = list("raw" = "nobs", "clean" = "Observations", "fmt" = function(x) format(round(x, 3), big.mark=",")),
-  #     nclusters = list("raw" = "nclusters", "clean" = "Number of clusters", "fmt" = function(x) format(round(x, 3), big.mark=",")),
-  #     r.squared = list("raw" = "r.squared", "clean" = "R-squared", "fmt" = 2),
-  #     adj.r.squared = list("raw" = "adj.r.squared", "clean" = "Adjusted R-squared", "fmt" = 2),
-  #     within.r.squared = list("raw" = "within.r.squared", "clean" = "Within R-squared", "fmt" = 2),
-  #     rmse = list("raw" = "rmse", "clean" = "RMSE", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
-  #     AIC = list("raw" = "AIC", "clean" = "AIC", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
-  #     BIC = list("raw" = "BIC", "clean" = "BIC", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
-  #     logLik = list("raw" = "logLik", "clean" = "LogL", "fmt" = function(x) format(round(x, 3), nsmall = 3, big.mark=",")),
-  #     statistic.Weak.instrument = list("raw" = "statistic.Weak.instrument", "clean" = "IV F-stat", "fmt" = 3),
-  #     p.value.Weak.instrument = list("raw" = "p.value.Weak.instrument", "clean" = "Weak IV p-value", "fmt" = 3),
-  #     p.value.Wu.Hausman = list("raw" = "p.value.Wu.Hausman", "clean" = "Wu-Hausman p-value", "fmt" = 3),
-  #     p.value.Sargan = list("raw" = "p.value.Sargan", "clean" = "Sargan p-value", "fmt" = 3)
-  #   ) |>
-  #   {\(df) if (!is.null(gof_stat)) purrr::keep(df, names(df) %in% gof_stat) else df}()
-
   # Generate modelsummary output (if variables are supplied)
   reg_tex = msummary(reglist,
                      stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
