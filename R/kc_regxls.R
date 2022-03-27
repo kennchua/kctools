@@ -105,10 +105,15 @@ kc_regxls <- function(reglist, sname = NULL,
                        cols = 2:ncol(reg_df), rows = 1:(nrow(reg_df)+1), gridExpand = TRUE,
                        style = openxlsx::createStyle(halign = 'center')) # center alignment of columns
 
-    openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = "auto")
+    if (is.null(note_lbl)) {
+      openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = "auto")
+    } else if (!is.null(note_lbl)) {
+      openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = 20)
+    }
 
     openxlsx::saveWorkbook(wb_regs,  file = paste0(fpath, fname),
                            overwrite = TRUE)
+
 
   } else if (overwrite == FALSE & file.exists(paste0(fpath, fname))) {
     wb_regs <- openxlsx::loadWorkbook(paste0(fpath, fname))
