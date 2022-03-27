@@ -1,0 +1,375 @@
+
+
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries: ####
+#-------------------------------------------------------------------#
+# 1. Load packages
+pacman::p_load('tidyverse', 'hrbrthemes', 'viridis', 'magrittr', 
+               'patchwork', 'haven', 'lubridate', 'hrbrthemes', 'scales')
+
+# 2. Set directories
+dir_aut1 <- "C:/Users/KWR/Dropbox/Research Projects/China Grape/"
+#dir_aut2 <- # INSERT CO-AUTHOR DIRECTORY HERE
+#dir_aut3 <- # INSERT CO-AUTHOR DIRECTORY HERE
+dir_main <- dir_aut1 # CHANGE DIRECTORY HERE 
+
+datapath <- paste0(dir_main, "02_Data_and_Information/")
+figrpath <- paste0(dir_main, "04_Output/02_Figures/")
+tablpath <- paste0(dir_main, "04_Output/03_Tables/")
+
+# 3. Load related data
+# 3a) App use data
+#appuse_raw <- read_dta(paste0(datapath, "07_App_Data/App_Usage_data.dta"))
+appuse_raw <- read_dta(paste0(datapath, "07_App_Data/App_Usage_Data_byUse.dta"))
+
+# 3b) App summary by video
+appuse_vid_raw <- read_dta(paste0(datapath, "07_App_Data/App_Usage_Data_byVideo.dta"))
+
+
+# 3c) App summary by farmer
+appuse_frm_raw <- read_dta(paste0(datapath, "07_App_Data/App_Usage_Data_byFarmer.dta"))
+
+# 3d) App farmer data 
+endline_raw <- read_dta(paste0(datapath, "04_Working_Data/EndMidBaseline_20210530_ALLOBS.dta"))
+
+farmer_tstatus <- endline_raw %>% 
+  filter(el_surveyed == 1) %>% 
+  select(farmer_id, treat_grp)
+
+#-------------------------------------------------------------------#
+#### B. App usage by day of week and time of day ####
+#-------------------------------------------------------------------#
+
+# 1. App usage by day of week (general)
+# absolute terms
+appuse_dow <- appuse_raw %>% 
+  group_by(app_entry_dow) %>% 
+  count() %>% 
+  mutate(dow_fct = case_when(app_entry_dow == 0 ~ "Sunday",
+                             app_entry_dow == 1 ~ "Monday",
+                             app_entry_dow == 2 ~ "Tuesday",
+                             app_entry_dow == 3 ~ "Wednesday",
+                             app_entry_dow == 4 ~ "Thursday",
+                             app_entry_dow == 5 ~ "Friday",
+                             app_entry_dow == 6 ~ "Saturday")) %>%
+  mutate(dow_fct = as_factor(dow_fct)) %>%
+  mutate(dow_fct = fct_relevel(dow_fct, "Sunday", "Monday", "Tuesday", "Wednesday", 
+                               "Thursday", "Friday", "Saturday"))
+fig_appuse_dow <- 
+ggplot(appuse_dow) +
+  geom_bar(aes(x = dow_fct, y = n), color = "#0A758F", fill = "#0A758F", stat = "identity") +
+  ylim(0, 3000) + 
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        #axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1),
+        legend.position = "bottom",
+        legend.title = element_text(size=11),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Day of the Week", y = "", subtitle = "Number of Interactions",
+       caption = "Note: Each interaction with the app is a video click by the user.")
+
+ggsave(fig_appuse_dow,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_trends_dow.eps"),
+       device = cairo_ps)  
+  
+# 2. App usage by day of week (treatment status) 
+
+
+
+# 3. App usage by time of day (general)
+appuse_tod <- appuse_raw %>% 
+  mutate(hod = hour(app_entry_time2)) %>% 
+  group_by(hod) %>% 
+  count() %>% 
+  mutate(hod_fct = as_factor(hod)) %>% 
+  ungroup()
+
+fig_appuse_tod <- 
+ggplot(appuse_tod) +
+  geom_bar(aes(x = hod_fct, y = n), fill = "#0A758F", stat = "identity") +
+  theme_ipsum() +
+  ylim(0, 2500) +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=11),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Hour of Day", y = "", subtitle = "Number of Interactions",
+       caption = "Note: Each interaction with the app is a video click by the user.")
+
+ggsave(fig_appuse_tod,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_trends_tod.eps"),
+       device = cairo_ps)  
+
+# 4. App usage by time of day (treatment status)
+
+
+
+# 5. App usage by time of day (type of video)
+appuse_tod_vidtyp <- appuse_raw %>% 
+  mutate(hod = hour(app_entry_time2)) %>% 
+  group_by(hod, video_type) %>% 
+  count() %>% 
+  mutate(hod_fct = as_factor(hod)) %>% 
+  ungroup() %>% 
+  mutate(vidtype_fct = case_when(video_type == 0 ~ "Placebo",
+                                 video_type == 1 ~ "Technical",
+                                 video_type == 2 ~ "Aspirational")) %>%
+  mutate(vidtype_fct = as_factor(vidtype_fct)) %>% 
+  mutate(vidtype_fct = fct_relevel(vidtype_fct, "Technical", "Aspirational", "Placebo"))
+
+
+fig_appuse_tod_vidtyp <- 
+ggplot(appuse_tod_vidtyp) +
+  geom_bar(aes(x = hod_fct, y = n), fill = "#0A758F", stat = "identity") +
+  facet_wrap(~ vidtype_fct, nrow = 3, scales = "free_y") +
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=11),
+        strip.text = element_text(size = 10, hjust = 0.5),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Hour of Day", y = "", subtitle = "Number of Interactions",
+       caption = "Note: Each interaction with the app is a video click by the user.")
+
+ggsave(fig_appuse_tod_vidtyp,
+       width = 8, height = 7, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_trends_tod_byvidtype.eps"),
+       device = cairo_ps)  
+
+#-------------------------------------------------------------------#
+#### C. Hours spent in app ####
+#-------------------------------------------------------------------#
+# 0. Add farmer id treatment status 
+
+# 1. Total minutes viewed by type of video (using topcoded)
+appuse_secs_inapp <- appuse_frm_raw %>% 
+  summarize(across(c(video_view_secs_topcode_tch, 
+                     video_view_secs_topcode_asp,
+                     video_view_secs_topcode_pla), ~ sum(.)))
+  
+
+
+# 2. Total hours viewed by treatment status and video type
+appuse_tot_secs_inapp <- appuse_frm_raw %>% 
+  #left_join(farmer_tstatus, by = c("farmer_id")) %>% {.} # 67 not matched 
+  filter(!is.na(treat_grp)) %>%
+  group_by(treat_grp) %>% 
+  summarize(across(c(video_view_secs_topcode_tch, 
+                     video_view_secs_topcode_asp,
+                     video_view_secs_topcode_pla), ~ sum(.))) %>% 
+  # Since some are misclassified
+  mutate(video_view_secs_topcode_tch = case_when(treat_grp == 0 ~ 0,
+                                                 TRUE ~ video_view_secs_topcode_tch),
+         video_view_secs_topcode_asp = case_when(treat_grp == 0 ~ 0,
+                                                 treat_grp == 1 ~ 0,
+                                                 TRUE ~ video_view_secs_topcode_asp)) %>% 
+  mutate(treatgrp_fct = case_when(treat_grp == 0 ~ "Control",
+                                  treat_grp == 1 ~ "T1",
+                                  treat_grp == 2 ~ "T2")) %>%
+  mutate(treatgrp_fct = as_factor(treatgrp_fct)) %>% 
+  pivot_longer(cols = starts_with("video_view_secs")) %>% 
+  mutate(value = value / 360) %>% 
+  mutate(vidtype_fct = case_when(name == "video_view_secs_topcode_pla" ~ "Placebo",
+                                 name == "video_view_secs_topcode_tch" ~ "Technical",
+                                 name == "video_view_secs_topcode_asp" ~ "Aspiration")) %>%
+  mutate(vidtype_fct = as_factor(vidtype_fct)) %>% 
+  mutate(vidtype_fct = fct_relevel(vidtype_fct, "Placebo", "Technical", "Aspiration"))
+
+
+fig_appuse_tot_secs_inapp <- 
+ggplot(appuse_tot_secs_inapp, aes(x=treatgrp_fct, y = value, fill=vidtype_fct)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_viridis(discrete=TRUE, option="mako", begin = 0.2, end = 0.9) +
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=9),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Treatment Status", y = "", subtitle = "Total Number of Hours Viewed",
+       caption = "Note: Total hours viewed by all farmers. Each viewing instance is topcoded at twice the length of the video. Includes farmers surveyed at endline only.") +
+  guides(fill= guide_legend(nrow=1, byrow=TRUE,
+                            title="Type of video",
+                            title.position = "left"))
+
+
+ggsave(fig_appuse_tot_secs_inapp,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_hrsinapp_tot.eps"),
+       device = cairo_ps)  
+
+# 3. Average hours viewed by treatment status and video type
+appuse_ave_secs_inapp <- appuse_frm_raw %>% 
+  #left_join(farmer_tstatus, by = c("farmer_id")) %>% {.} # 67 not matched 
+  filter(!is.na(treat_grp)) %>%
+  group_by(treat_grp) %>% 
+  summarize(across(c(video_view_secs_topcode_tch, 
+                     video_view_secs_topcode_asp,
+                     video_view_secs_topcode_pla), ~ mean(.))) %>% 
+  # Since some are misclassified
+  mutate(video_view_secs_topcode_tch = case_when(treat_grp == 0 ~ 0,
+                                                 TRUE ~ video_view_secs_topcode_tch),
+         video_view_secs_topcode_asp = case_when(treat_grp == 0 ~ 0,
+                                                 treat_grp == 1 ~ 0,
+                                                 TRUE ~ video_view_secs_topcode_asp)) %>% 
+  mutate(treatgrp_fct = case_when(treat_grp == 0 ~ "Control",
+                                  treat_grp == 1 ~ "T1",
+                                  treat_grp == 2 ~ "T2")) %>%
+  mutate(treatgrp_fct = as_factor(treatgrp_fct)) %>% 
+  pivot_longer(cols = starts_with("video_view_secs")) %>% 
+  mutate(value = value / 360) %>% 
+  mutate(vidtype_fct = case_when(name == "video_view_secs_topcode_pla" ~ "Placebo",
+                                 name == "video_view_secs_topcode_tch" ~ "Technical",
+                                 name == "video_view_secs_topcode_asp" ~ "Aspiration")) %>%
+  mutate(vidtype_fct = as_factor(vidtype_fct)) %>% 
+  mutate(vidtype_fct = fct_relevel(vidtype_fct, "Placebo", "Technical", "Aspiration"))
+
+
+fig_appuse_ave_secs_inapp <- 
+  ggplot(appuse_ave_secs_inapp, aes(x=treatgrp_fct, y = value, fill=vidtype_fct)) +
+  geom_bar(stat="identity", position="dodge") +
+  ylim(0, 10) +
+  scale_fill_viridis(discrete=TRUE, option="mako", begin = 0.2, end = 0.9) +
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=9),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Treatment Status", y = "", subtitle = "Average Number of Hours Viewed", 
+       caption = "Note: Average hours viewed by all farmers. Each viewing instance is topcoded at twice the length of the video. Includes farmers surveyed at endline only.") +
+  guides(fill= guide_legend(nrow=1, byrow=TRUE,
+                            title="Type of video",
+                            title.position = "left"))
+
+
+ggsave(fig_appuse_ave_secs_inapp,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_hrsinapp_ave.eps"),
+       device = cairo_ps)  
+  
+  
+#-------------------------------------------------------------------#
+#### D. Share of videos viewed ####
+#-------------------------------------------------------------------#
+# 1. Average share of videos seen
+shvid_seen <- endline_raw %>% 
+  filter(!is.na(treat_grp) & el_surveyed == 1) %>% 
+  select(farmer_id, treat_grp, techvid_shr_seen, aspivid_shr_seen) %>% 
+  group_by(treat_grp) %>% 
+  summarize(across(c(techvid_shr_seen, aspivid_shr_seen), ~ mean(.))) %>%
+  mutate(techvid_shr_seen = case_when(treat_grp == 0 ~ 0,
+                                      TRUE ~ techvid_shr_seen)) %>% 
+  mutate(treatgrp_fct = case_when(treat_grp == 0 ~ "Control",
+                                  treat_grp == 1 ~ "T1",
+                                  treat_grp == 2 ~ "T2")) %>%
+  mutate(treatgrp_fct = as_factor(treatgrp_fct)) %>% 
+  pivot_longer(cols = c("techvid_shr_seen", "aspivid_shr_seen")) %>% 
+  #mutate(value = value *100) %>%
+  mutate(vidtype_fct = case_when(name == "techvid_shr_seen" ~ "Technical",
+                                 name == "aspivid_shr_seen" ~ "Aspiration")) %>%
+  mutate(vidtype_fct = as_factor(vidtype_fct)) %>% 
+  mutate(vidtype_fct = fct_relevel(vidtype_fct, "Technical", "Aspiration"))
+
+  
+fig_appuse_shvidseen <- 
+ggplot(shvid_seen, aes(x=treatgrp_fct, y = value, fill=vidtype_fct)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_viridis(discrete=TRUE, option="mako", begin = 0.5, end = 0.9) +
+  scale_y_continuous(labels = percent, limits = c(0, 0.30)) + 
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=9),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Treatment Status", y = "", subtitle = "Share of Total Videos Viewed",
+       caption = "Note: Average share of videos viewed. Includes farmers surveyed at endline only.") +
+  guides(fill= guide_legend(nrow=1, byrow=TRUE,
+                            title="Type of video",
+                            title.position = "left"))
+
+ggsave(fig_appuse_shvidseen,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_shvidseen_00.eps"),
+       device = cairo_ps)  
+
+
+#-------------------------------------------------------------------#
+#### E. Time Series of Weekly Views ####
+#-------------------------------------------------------------------#
+# 1. 
+appuse_by_week <- appuse_raw %>% 
+  mutate(app_entry_week = lubridate::week(app_entry_date2)) %>% 
+  group_by(app_entry_week) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(paste("2020", app_entry_week, "1", sep = "-"), "%Y-%U-%u"))
+
+fig_appuse_timeseries <-   
+ggplot(appuse_by_week, aes(x=date, y=n)) +
+  geom_line(color = "#0A758F") + 
+  xlab("") + 
+  scale_x_date(date_labels = "%m-%Y") +
+  theme_ipsum() +
+  theme(panel.grid.minor = element_blank(), 
+        plot.subtitle = element_text(size = 10, vjust=-1),
+        plot.title.position = "plot", 
+        axis.title.x = element_text(size=10, hjust = 0.5),
+        #axis.title.y = element_text(size=10, hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_text(size=9),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, face = "plain")) + 
+  labs(x = "Date", y = "", subtitle = "Weekly Total App Interactions",
+       caption = "Note: Each interaction is a video click by the user.")+
+  geom_vline(xintercept=as.numeric(as.Date("2020-06-22")),color = "red")+ 
+  annotate(geom = "text", x = as.Date('2020-05-25'), y = 1300, label = "Started Providing", hjust = "left")+
+  annotate(geom = "text", x = as.Date('2020-05-25'), y = 1250, label = "Incentives", hjust = "left")
+
+
+ 
+  
+#  geom_segment(aes(x = as.Date('2020-06-15'),y = 1300, xend =   as.Date('2020-06-22'), yend = 1325),arrow = arrow(length = unit(0.5, "cm"))) +
+
+ggsave(fig_appuse_timeseries,
+       width = 8, height = 5, units = "in", dpi = 300,
+       filename = paste0(figrpath, "App Usage/appuse_trends_weeklytot.eps"),
+       device = cairo_ps)  
+

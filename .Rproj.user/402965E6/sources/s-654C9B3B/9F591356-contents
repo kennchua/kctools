@@ -1,0 +1,168 @@
+#### Bliss Point Media
+# Submitted by: Kenn Chua
+
+
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries ####
+#-------------------------------------------------------------------#
+# 1. Load libraries
+if (!require('pacman')) install.packages('pacman')
+
+pacman::p_load('tidyverse', 'tidytable')
+#pacman::p_load('readxl', 'openxlsx', 'haven')
+pacman::p_load('ggplot2', 'patchwork', 'hrbrthemes', 'viridis')
+pacman::p_load('fixest', 'did', 'modelsummary')
+#pacman::p_load('sf', 'rmapshaper', 'units')
+#pacman::p_load('tidymodels', 'glmnet', 'ranger', 'xgboost')
+
+pacman::p_load('kctools') # own package
+
+# 2. Set directories
+dir_kc <- "/Users/kenngarrychua/Downloads/Econometrics Assessment Data/"
+dir_bp <- "" # Other users
+
+dir_main <- dir_kc # Change this
+
+
+#-------------------------------------------------------------------#
+#### B. Import and explore data ####
+#-------------------------------------------------------------------#
+# 1. Import raw data
+impression_raw <- read_csv(paste0(dir_main, "econometrics_assessment_impression_data.csv"), skip = 1,
+                           col_names = c("uid", "impress_tmst", "network", "creative"))
+
+order_raw <- read_csv(paste0(dir_main, "econometrics_assessment_order_data.csv"), skip = 1,
+                      col_names = c("uid", "order_tmst", "order_val"))
+
+
+# 2. Remove those in order but not in impression
+# 2a) IDs in client data but not in Bliss Point data
+notinbp <- setdiff(order_raw |> distinct(uid) |> pull(uid),
+                   impression_raw |> distinct(uid) |> pull(uid))
+
+
+# 2b) Create master id for those in impression 
+master_id <- full_join(impression_raw |> distinct(uid),
+                       order_raw |> distinct(uid),
+                       by = c("uid")) |>
+  filter(! uid %in% notinbp) |> # exclude those not in BP data
+  mutate(master_id = row_number())
+
+
+#-------------------------------------------------------------------#
+#### B. Import and explore data ####
+#-------------------------------------------------------------------#
+# 1. Get earliest exposure of person to a creative
+impression_first_a <- impression_raw |>
+  filter.(creative == "Creative A") |>
+  left_join.(master_id, by = c("uid")) |>
+  #group_by(master_id) |>
+  mutate.(impress_first_a = min(impress_tmst), .by = "master_id") |>
+  mutate.(impress_first_a_ntwk = ifelse(impress_tmst == impress_first_a, network, NA_character_)) |>
+  #ungroup() |>
+  filter.(!is.na(impress_first_a_ntwk)) |>
+  distinct.(master_id, impress_first_a, impress_first_a_ntwk) |>
+  filter.(!(master_id == 1529609 & impress_first_a_ntwk == "BEESWAX")) # drop duplicate (exposed same time)
+
+impression_first_b <- impression_raw |>
+  filter.(creative == "Creative B") |>
+  left_join.(master_id, by = c("uid")) |>
+  #group_by(master_id) |>
+  mutate.(impress_first_b = min(impress_tmst), .by = "master_id") |>
+  mutate.(impress_first_b_ntwk = ifelse(impress_tmst == impress_first_b, network, NA_character_)) |>
+  #ungroup() |>
+  filter.(!is.na(impress_first_b_ntwk)) |>
+  distinct.(master_id, impress_first_b, impress_first_b_ntwk)
+
+impression_first_c <- impression_raw |>
+  filter.(creative == "Creative C") |>
+  left_join.(master_id, by = c("uid")) |>
+  #group_by(master_id) |>
+  mutate.(impress_first_c = min(impress_tmst), .by = "master_id") |>
+  mutate.(impress_first_c_ntwk = ifelse(impress_tmst == impress_first_c, network, NA_character_)) |>
+  #ungroup() |>
+  filter.(!is.na(impress_first_c_ntwk)) |>
+  distinct.(master_id, impress_first_c, impress_first_c_ntwk)
+
+
+impression_first_any <- reduce(list(impression_first_a,
+                                    impression_first_b,
+                                    impression_first_c),
+                               full_join.) |> # 2129532 unique uid
+  mutate.(impress_first_any = min(impress_first_a, 
+                                  impress_first_b,
+                                  impress_first_c, na.rm = TRUE), .by = "master_id") |>
+  filter.(impress_first_a != impress_first_b | is.na(impress_first_a) | is.na(impress_first_b)) |> # 40
+  filter.(impress_first_a != impress_first_c | is.na(impress_first_a) | is.na(impress_first_c)) |> # 22 
+  filter.(impress_first_b != impress_first_c | is.na(impress_first_b) | is.na(impress_first_c)) |> # 42
+  mutate.(impress_first_any_ntwk = case_when.(impress_first_any == impress_first_a ~ impress_first_a_ntwk,
+                                              impress_first_any == impress_first_b ~ impress_first_b_ntwk,
+                                              impress_first_any == impress_first_c ~ impress_first_c_ntwk)) |>
+  mutate.(impress_first_any_crtv = case_when.(impress_first_any == impress_first_a ~ "A",
+                                              impress_first_any == impress_first_b ~ "B",
+                                              impress_first_any == impress_first_c ~ "C")) |>
+  mutate.(has_creative_a = ifelse.(!is.na(impress_first_a), 1, 0)) |>
+  mutate.(has_creative_b = ifelse.(!is.na(impress_first_b), 1, 0)) |>
+  mutate.(has_creative_c = ifelse.(!is.na(impress_first_c), 1, 0))
+                                            
+  
+# 2. Link orders to impressions  
+order_first <- order_raw |> 
+  filter.(! uid %in% notinbp) |>
+  left_join.(master_id, by = c("uid")) |>
+  # Link to first creative seen
+  left_join.(impression_first_any |>
+               select.(master_id, contains("_any"), starts_with("has_")),
+             by = c("master_id")) |>
+  # Classify order as pre-exposure or post-exposure
+  mutate.(order_post = ifelse.(impress_first_any <= order_tmst, 1, 0)) |>
+  filter.(!is.na(order_post)) |> # one NA because impress_first_a == impress_first_b
+  # Classify consumers: those with orders before exposure and those who only order upon exposure
+  mutate.(new_cons = min(order_post), .by = "master_id") # =1 a new consumer; = 0 already consuming even before exposure
+
+
+
+
+# 3. 
+impression_can_by_wk <- impression_raw |>
+  mutate.(impress_date = as.Date(impress_tmst)) |>
+  mutate.(impress_week = lubridate::week(impress_date)) |>
+  mutate.(impress_month = lubridate::month(impress_date)) |>
+  mutate.(impress_day = lubridate::day(impress_date)) |>
+  filter.(impress_week >= 2 & impress_week <= 8) |>
+  mutate.(dayofyear = case_when.(impress_month == 1 ~ impress_day,
+                                 impress_month == 2 ~ impress_day + 31))
+
+impression_can_by_dy <- impression_can_by_wk |>
+  group_by(creative, dayofyear) |>
+  count()
+
+ggplot(impression_can_by_dy) +
+  geom_line(aes(x=dayofyear, y=n, color = creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 34) + # day 91
+  theme_ipsum() 
+
+
+ggplot(impression_cre_by_dy) +
+  geom_line(aes(x=impress_week, y=n, color = creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 13) +
+  theme_ipsum() 
+
+
+# 3. Expand grid (popn: already consumers of this product)
+# Consider the popn of consumers who were already buying even before earliest exposure to a creative.
+# Question: Do they increase the value of their orders upon exposure to a creative relative to unexposed consumers?
+order_analysis1 <- order_raw |>
+  left_join.(order_first |> 
+               select.())
+
+
+
+
+# 4. Expand grid (popn: all reached by impressions) 
+# Consider the population of those reached by impressions.
+# Question: Did it induce new/greater consumption?
+  

@@ -1,0 +1,214 @@
+#### Bliss Point Media
+# Submitted by: Kenn Chua
+
+
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries ####
+#-------------------------------------------------------------------#
+# 1. Load libraries
+if (!require('pacman')) install.packages('pacman')
+
+pacman::p_load('tidyverse', 'tidytable')
+#pacman::p_load('readxl', 'openxlsx', 'haven')
+pacman::p_load('ggplot2', 'patchwork', 'hrbrthemes', 'viridis')
+pacman::p_load('fixest', 'did', 'modelsummary')
+#pacman::p_load('sf', 'rmapshaper', 'units')
+#pacman::p_load('tidymodels', 'glmnet', 'ranger', 'xgboost')
+
+pacman::p_load('kctools') # own package
+
+# 2. Set directories
+dir_kc <- "/Users/kenngarrychua/Downloads/Econometrics Assessment Data/"
+dir_bp <- "" # Other users
+
+dir_main <- dir_kc # Change this
+
+
+#-------------------------------------------------------------------#
+#### B. Import and explore data ####
+#-------------------------------------------------------------------#
+# 1. Import raw data
+impression_raw <- read_csv(paste0(dir_main, "econometrics_assessment_impression_data.csv"), skip = 1,
+                           col_names = c("uid", "impress_tmst", "network", "creative"))
+
+order_raw <- read_csv(paste0(dir_main, "econometrics_assessment_order_data.csv"), skip = 1,
+                      col_names = c("uid", "order_tmst", "order_val"))
+
+
+
+
+#-------------------------------------------------------------------#
+#### C. Analysis based on one-time exposure to only one creative ####
+#-------------------------------------------------------------------#
+# 1. Filter to those exposed to only one creative
+impression_crtv <- impression_raw |>
+  mutate.(is_creative_a = case_when.(creative == "Creative A" ~ 1,
+                                     TRUE ~ 0),
+          is_creative_b = case_when.(creative == "Creative B" ~ 1,
+                                     TRUE ~ 0),
+          is_creative_c = case_when.(creative == "Creative C" ~ 1,
+                                     TRUE ~ 0)) |>
+  mutate.(has_creative_a = max(is_creative_a), .by = "uid") |>
+  mutate.(has_creative_b = max(is_creative_b), .by = "uid") |>
+  mutate.(has_creative_c = max(is_creative_c), .by = "uid") |>
+  mutate.(tot_creative = has_creative_a + has_creative_b + has_creative_c)
+         
+
+impression_crtv_one <- impression_crtv |>
+  select.(-starts_with("is_creative")) |>
+  filter.(tot_creative == 1) |>
+  mutate.(typ_creative = case_when.(has_creative_a == 1 ~ "A",
+                                    has_creative_b == 1 ~ "B",
+                                    has_creative_c == 1 ~ "C")) |>
+  mutate.(crtv_times = n.(), .by = "uid") |>
+  filter.(crtv_times == 1)
+
+
+# 2. Visualize orders vis-a-vis to first (and only) impression
+# 2a) Link impressions to orders
+impression_ordr_first <- impression_crtv_one |>
+  filter.(crtv_times == 1) |>  # limit to those only exposed to the creative once
+  left_join.(order_raw, by = "uid") |>
+  mutate.(order_val = case_when.(is.na(order_tmst) ~ 0,
+                                 !is.na(order_tmst) ~ order_val)) |>
+  mutate.(ihs_order_val = asinh(order_val)) |>
+  mutate.(impress_month = lubridate::month(impress_tmst),
+          impress_day = lubridate::day(impress_tmst),
+          order_month = lubridate::month(order_tmst),
+          order_day = lubridate::day(order_tmst)) |>
+  filter.(impress_month != 12) |> # drop if in December 31st
+  mutate.(impress_day = case_when.(impress_month == 1 ~ impress_day,
+                                   impress_month == 2 ~ impress_day + 31,
+                                   impress_month == 3 ~ impress_day + 31 + 28,
+                                   impress_month == 4 ~ impress_day + 31 + 28 + 31,
+                                   impress_month == 5 ~ impress_day + 31 + 28 + 31 + 30,
+                                   impress_month == 6 ~ impress_day + 31 + 28 + 31 + 30 + 31)) |>
+  mutate.(order_day = case_when.(order_month == 1 ~ order_day,
+                                 order_month == 2 ~ order_day + 31,
+                                 order_month == 3 ~ order_day + 31 + 28,
+                                 order_month == 4 ~ order_day + 31 + 28 + 31,
+                                 order_month == 5 ~ order_day + 31 + 28 + 31 + 30,
+                                 order_month == 6 ~ order_day + 31 + 28 + 31 + 30 + 31))
+  
+                                  
+
+# 2b) Visualize average and totals
+# [i] Total Impressions 
+impression_first_sum <- impression_ordr_first |>
+  mutate.(impress_week = lubridate::week(impress_tmst)) |>
+  mutate.(impress_week = ifelse.(impress_week > 27, 1, impress_week)) |>
+  count.(impress_week, typ_creative, name = "impressions")
+
+ggplot(impression_first_sum) +
+  geom_line(aes(x=impress_week, y=impressions, color = typ_creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 5) + # day 34
+  geom_vline(xintercept = 13) + # day 91
+  theme_ipsum() 
+
+# [ii] Total Order Value and Average IHS Order Value
+impression_ordr_first_sum <- impression_ordr_first |>
+  #filter.(impress_tmst < order_tmst) |> # remove orders that transpire before impression
+  mutate.(impress_week = lubridate::week(impress_tmst)) |>
+  mutate.(impress_week = ifelse.(impress_week > 27, 1, impress_week)) |>
+  mutate.(order_week = lubridate::week(order_tmst)) |>
+  mutate.(order_week = ifelse.(order_week > 27, 1, order_week)) |>
+  summarize.(avg_ihs_order_val = mean(ihs_order_val, na.rm = TRUE),
+             tot_order_val = sum(order_val, na.rm = TRUE),
+             .by = c(typ_creative, impress_week)) |>
+  filter.(!is.na(impress_week))
+  
+ggplot(impression_ordr_first_sum) +
+  geom_line(aes(x=impress_week, y=avg_ihs_order_val, color = typ_creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 5) + # day 34
+  geom_vline(xintercept = 13) + # day 91
+  theme_ipsum() 
+
+
+# [ii] Total Order Value and Average IHS Order Value (expand_grid)
+impression_ordr_first_sum2 <- expand_grid(uid = impression_ordr_first |> pull.(uid) |> unique(),
+                                          week = c(1:26)) |>
+  left_join.(impression_ordr_first |>
+               mutate.(impress_week = lubridate::week(impress_tmst)) |>
+               mutate.(impress_week = ifelse.(impress_week > 27, 1, impress_week)),
+             by = c("uid", "week" = "impress_week")) |>
+  mutate.(order_val = case_when.(is.na(order_tmst) ~ 0,
+                                 !is.na(order_tmst) ~ order_val)) |>
+  mutate.(ihs_order_val = asinh(order_val)) |>
+  summarize.(avg_ihs_order_val = mean(ihs_order_val, na.rm = TRUE),
+             tot_order_val = sum(order_val, na.rm = TRUE),
+             .by = c(typ_creative, week)) 
+
+ggplot(impression_ordr_first_sum2 |> filter.(!is.na(typ_creative) & typ_creative %in% c("B", "A"))) +
+  geom_line(aes(x=week, y=avg_ihs_order_val, color = typ_creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 5) + # day 34
+  geom_vline(xintercept = 13) + # day 91
+  theme_ipsum() 
+  
+
+
+# 3. Data for pre-post analysis: Within +/- 14 days of exposure, regardless of when
+# Population of switchers at any time 
+prepost1_prep <- impression_ordr_first |> 
+  mutate.(reltime_day = impress_day - order_day) |>
+  # mutate.(reltime_day = case_when.(reltime_day == 0 & order_tmst < impress_tmst ~ -1, # if order comes before impression, change reltime_day to -1
+  #                                  TRUE ~ reltime_day)) |>
+  mutate.(order_dow = lubridate::wday(order_tmst))
+
+prepost1_ordervaltot <- prepost1_prep |>
+  filter.(!is.na(reltime_day)) |>
+  summarize.(order_val = sum(order_val, na.rm = TRUE), 
+             order_month = min(order_month, na.rm = TRUE),
+             order_day = min(order_day, na.rm = TRUE),
+             order_dow = min(order_dow, na.rm = TRUE),
+             .by = c(uid, reltime_day))
+
+prepost1_impression <- prepost1_prep |>
+  filter.(!is.na(reltime_day)) |>
+  distinct.(uid, network, creative, typ_creative)
+
+
+prepost1_bld <- expand_grid.(uid = prepost1_ordervaltot |> pull(uid) |> unique(), 
+                             reltime_day = c(-14:14)) |>
+  left_join.(prepost1_ordervaltot,
+             by = c("uid", "reltime_day")) |>
+  left_join.(prepost1_impression,
+             by = c("uid")) |>
+  mutate.(order_val = case_when(is.na(order_val) ~ 0, 
+                                TRUE ~ order_val)) |>
+  mutate.(ihs_order_val = asinh(order_val)) 
+  
+
+impression_bld_first_sum <- prepost1_bld |>
+  summarize.(avg_ihs_order_val = mean(ihs_order_val, na.rm = TRUE),
+             tot_order_val = sum(order_val, na.rm = TRUE),
+             .by = c(typ_creative, reltime_day)) 
+
+
+ggplot(impression_bld_first_sum) +
+  geom_line(aes(x=reltime_day, y=tot_order_val, color = typ_creative)) + 
+  xlab("") + 
+  #geom_vline(xintercept = -1) + # day 34
+  theme_ipsum() 
+
+# 4. Data for pre-post analysis: Within +/- 14 days of exposure, around Day 91 (A vs. C) and Day 34 (B vs. C)
+# Population of switchers during the relevant time window
+
+# 5. 
+
+#-------------------------------------------------------------------#
+#### C. Link orders to impressions (most recent)  ####
+#-------------------------------------------------------------------#
+# Restrict to exposure between
+# Day 91 +/- 14 (sharp rise in Creative A)
+# Day 34 +/- 14 (sharp dip in Creative B)
+
+# 1. 
+  
+
+
+
+

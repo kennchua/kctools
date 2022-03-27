@@ -17,6 +17,7 @@
 
 kc_regxls <- function(reglist, sname = NULL,
                       coef_lbl = NULL, gof_lbl = NULL, rows_lbl = NULL, # gof_stat = NULL
+                      note_lbl = NULL,
                       fpath = "~/Desktop/", fname = "kc_mod_all.xlsx",
                       ivwald = FALSE,
                       overwrite = TRUE) {
@@ -80,7 +81,8 @@ kc_regxls <- function(reglist, sname = NULL,
                                       add_rows = rows_lbl,
                                       output = "data.frame") |>
     dplyr::select(-part, -statistic) |>
-    dplyr::mutate(across(term, ~replace(., duplicated(.), NA))) # replace duplicate with NA
+    dplyr::mutate(across(term, ~replace(., duplicated(.), NA))) |> # replace duplicate with NA
+    dplyr::add_row(term = note_lbl)
 
   # Change name of df columns
   colnames(reg_df) <- c(" ", paste0("(", 1:(ncol(reg_df)-1), ")"))

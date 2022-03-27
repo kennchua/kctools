@@ -1,0 +1,1819 @@
+#### Regression Results: LFS
+# DV: school attendance, child work
+# July, October, January LFS; HUC-level and SDIV-level results
+# Last edited on: December 6, 2021
+# Last edited by: Kenn Chua
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries: ####
+#-------------------------------------------------------------------#
+# 1. Load packages
+pacman::p_load('tidyverse', 'magrittr')
+pacman::p_load('readxl', 'openxlsx', 'haven')
+#pacman::p_load('ggplot2', 'patchwork', 'hrbrthemes', 'viridis')
+pacman::p_load('fixest', 'modelsummary', 'kableExtra', 'Hmisc')
+#pacman::p_load('sf', 'rmapshaper', 'units')
+
+pacman::p_load('kctools') # own package
+
+# 2. Setting directories for co-authors and the project
+dir_aut1 <- "/Volumes/GoogleDrive/My Drive/Papers/SchFinPH/"
+#dir_aut2 <- # INSERT CO-AUTHOR DIRECTORY HERE
+#dir_aut3 <- # INSERT CO-AUTHOR DIRECTORY HERE
+dir_main <- dir_aut1 # CHANGE DIRECTORY HERE
+
+codepath <- paste0(dir_main, "Code/")
+tablpath <- paste0(dir_main, "Tables/")
+figupath <- paste0(dir_main, "Figures/")
+rawdatapath <- paste0(dir_main, "Data/")
+buidatapath <- paste0(dir_main, "Data/For_Building/")
+anadatapath <- paste0(dir_main, "Data/For_Analysis/")
+
+explrpath <- paste0(dir_main, "Exploration/")
+
+# 3. Load related data
+# 3a) LFS - HUC level
+# 2009 - 2017
+lfs_ana_joj_0917 <- readRDS(paste0(anadatapath, "LFS_0917_JOJ_HUC_Ana.rds"))
+
+# 3b) LFS - SDIV level
+# [i] 2009-2015 July, October, January
+lfs_ana_joj_0915 <- readRDS(paste0(anadatapath, "LFS_0915_JOJ_SDiv_Ana.rds"))
+
+# [ii] 2009-2016 July only
+lfs_ana_jul_0916 <- readRDS(paste0(anadatapath, "LFS_0916_JUL_SDiv_Ana.rds"))
+
+
+#-------------------------------------------------------------------#
+#### B. Data, Variables, Macros ####
+#-------------------------------------------------------------------#
+# 1. Control variables
+cvars <- c("gender", "factor(r_age)", "hh_size", "hh_hasofw")
+
+
+#-------------------------------------------------------------------#
+#### C. OLS: School enrollment and child labor - JOJ HUC 11-16 ####
+#-------------------------------------------------------------------#
+# Note: In the analysis, I use year (academic year) FE rather than svyyr (survey year)
+# Main sample: SY 2011 to SY 2016
+
+# 1. JHS (all 3 months)
+lfs_jhs_huc_joj_1116_ols <- list()
+
+lfs_jhs_huc_joj_1116_ols[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ log(realusd_mooepp_jhs_huc)  |
+                                         huc_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_ols[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                         huc_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_ols[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ log(realusd_mooepp_jhs_huc)  |
+                                         huc_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_ols[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ log(realusd_mooepp_jhs_huc) + .[cvars]  |
+                                         huc_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_huc_joj_1116_ols <- list()
+
+lfs_es_huc_joj_1116_ols[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      ed_schatt ~ log(realusd_mooepp_es_huc)  |
+                                        huc_2018 + year + svymo,
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_ols[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      ed_schatt ~ log(realusd_mooepp_es_huc) + + .[cvars] |
+                                        huc_2018 + year + svymo,
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_ols[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      worked_past7 ~ log(realusd_mooepp_es_huc)  |
+                                        huc_2018 + year + svymo,
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_ols[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      worked_past7 ~ log(realusd_mooepp_es_huc) + + .[cvars]  |
+                                        huc_2018 + year + svymo,
+                                      weights = ~ r_pwgt)
+
+
+
+# 3. JHS (by month)
+# all months, july, october, january
+lfs_jhs_huc_bym_1116_ols_i <- list() # ed_schatt
+lfs_jhs_huc_bym_1116_ols_ii <- list() # worked_past7
+
+lfs_jhs_huc_bym_1116_ols_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                         ed_schatt ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                           huc_2018 + year + svymo,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         ed_schatt ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         ed_schatt ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         ed_schatt ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                          worked_past7 ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                            huc_2018 + year + svymo,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                          worked_past7 ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                            huc_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                          worked_past7 ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                            huc_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_ols_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                          worked_past7 ~ log(realusd_mooepp_jhs_huc) + .[cvars] |
+                                            huc_2018 + year,
+                                          weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+lfs_es_huc_bym_1116_ols_i <- list() # ed_schatt
+lfs_es_huc_bym_1116_ols_ii <- list() # worked_past7
+
+lfs_es_huc_bym_1116_ols_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                          huc_2018 + year + svymo,
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                        ed_schatt ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                          huc_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                        ed_schatt ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                          huc_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                        ed_schatt ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                          huc_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                         worked_past7 ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                           huc_2018 + year + svymo,
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         worked_past7 ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         worked_past7 ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_ols_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         worked_past7 ~ log(realusd_mooepp_es_huc) + .[cvars] |
+                                           huc_2018 + year,
+                                         weights = ~ r_pwgt)
+
+#### 5. Export Excel tables: OLS JOJ HUC 11-16 ####
+gof_list <- list(nobs = list("raw" = "nobs", "clean" = "Observations", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+                 nclusters = list("raw" = "nclusters", "clean" = "Number of clusters", "fmt" = function(x) format(round(x, 3), big.mark=",")),
+                 r.squared = list("raw" = "r.squared", "clean" = "R-squared", "fmt" = 2),
+                 adj.r.squared = list("raw" = "adj.r.squared", "clean" = "Adjusted R-squared", "fmt" = 2))
+
+coef_lst <- c('log(realusd_mooepp_jhs_huc)' = 'Log(PPOE)',
+              'gender' = 'Female')
+
+
+rows_lst <- tribble(~"term", ~"Model 1", ~"Model 2", ~ "Model 3", ~"Model 4",
+                    'Unit FE', 'Yes', 'Yes', 'Yes', 'Yes',
+                    'Year FE', 'Yes', 'Yes', 'Yes', 'Yes')
+
+
+
+kc_regxls(lfs_jhs_huc_joj_1116_ols,
+          sname = "My_Excel",
+          coef_lbl = coef_lst,
+          gof_lbl = gof_list,
+          rows_lbl = rows_lst,
+          ivwald = TRUE)
+
+
+
+#### 5. Export Latex tables: OLS JOJ HUC 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_huc_joj_1116_ols, sep = FALSE,
+          coef_lbl = coef_lst,
+          gof_lbl = gof_list)
+          #path = paste0(explrpath, "Tables/LFS/"),
+          #fname_est = "OLS_jhs_huc_joj_1116_est.tex",
+          #fname_det = "OLS_jhs_huc_joj_1116_det.tex"
+
+
+kc_regtex(lfs_es_huc_joj_1116_ols, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_huc_joj_1116_est.tex",
+          fname_det = "OLS_es_huc_joj_1116_det.tex")
+
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_huc_bym_1116_ols_i, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_huc_bym_1116_est_1.tex",
+          fname_det = "OLS_jhs_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_jhs_huc_bym_1116_ols_ii, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_huc_bym_1116_est_2.tex",
+          fname_det = "OLS_jhs_huc_bym_1116_det_2.tex")
+
+# 4 columns of results (1 for full; 3 for july, october, january)
+kc_regtex(lfs_es_huc_bym_1116_ols_i, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_huc_bym_1116_est_1.tex",
+          fname_det = "OLS_es_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_es_huc_bym_1116_ols_ii, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_huc_bym_1116_est_2.tex",
+          fname_det = "OLS_es_huc_bym_1116_det_2.tex")
+
+#-------------------------------------------------------------------#
+#### D. OLS: School enrollment and child labor - JOJ SDIV 11-15 ####
+#-------------------------------------------------------------------#
+# 1. JHS
+lfs_jhs_sdiv_joj_1115_ols <- list()
+
+lfs_jhs_sdiv_joj_1115_ols[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ log(realusd_mooepp_jhs_sdiv)  |
+                                          sdiv_2018 + year + svymo,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_ols[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                          sdiv_2018 + year + svymo,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_ols[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ log(realusd_mooepp_jhs_sdiv)  |
+                                          sdiv_2018 + year + svymo,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_ols[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars]  |
+                                          sdiv_2018 + year + svymo,
+                                        weights = ~ r_pwgt)
+
+
+# 2. ES
+lfs_es_sdiv_joj_1115_ols <- list()
+
+lfs_es_sdiv_joj_1115_ols[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ log(realusd_mooepp_es_sdiv)  |
+                                         sdiv_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_ols[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                         sdiv_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_ols[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ log(realusd_mooepp_es_sdiv)  |
+                                         sdiv_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_ols[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars]  |
+                                         sdiv_2018 + year + svymo,
+                                       weights = ~ r_pwgt)
+
+
+
+# 3. JHS (by month)
+# all months, july, october, january
+lfs_jhs_sdiv_bym_1115_ols_i <- list() # ed_schatt
+lfs_jhs_sdiv_bym_1115_ols_ii <- list() # worked_past7
+
+lfs_jhs_sdiv_bym_1115_ols_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                          ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                            sdiv_2018 + year + svymo,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                          ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                          ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                          ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                           worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                             sdiv_2018 + year + svymo,
+                                           weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                           worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                             sdiv_2018 + year,
+                                           weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                           worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                             sdiv_2018 + year,
+                                           weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_ols_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                           worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                             sdiv_2018 + year,
+                                           weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+# all months, july, october, january
+lfs_es_sdiv_bym_1115_ols_i <- list() # ed_schatt
+lfs_es_sdiv_bym_1115_ols_ii <- list() # worked_past7
+
+lfs_es_sdiv_bym_1115_ols_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                         ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                           sdiv_2018 + year + svymo,
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                         ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                           sdiv_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                         ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                           sdiv_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                         ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                           sdiv_2018 + year,
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                          worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                            sdiv_2018 + year + svymo,
+                                          weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                          worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                          worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_ols_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                          worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                            sdiv_2018 + year,
+                                          weights = ~ r_pwgt)
+
+
+#### 5. Export tables: OLS JOJ SDIV 11-15 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_joj_1115_ols, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_sdiv_joj_1115_est.tex",
+          fname_det = "OLS_jhs_sdiv_joj_1115_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_joj_1115_ols, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_sdiv_joj_1115_est.tex",
+          fname_det = "OLS_es_sdiv_joj_1115_det.tex")
+
+
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_sdiv_bym_1115_ols_i, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_sdiv_bym_1115_est_1.tex",
+          fname_det = "OLS_jhs_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_jhs_sdiv_bym_1115_ols_ii, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_sdiv_bym_1115_est_2.tex",
+          fname_det = "OLS_jhs_sdiv_bym_1115_det_2.tex")
+
+# 4 columns of results (1 for full; 3 for july, october, january)
+kc_regtex(lfs_es_sdiv_bym_1115_ols_i, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_sdiv_bym_1115_est_1.tex",
+          fname_det = "OLS_es_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_es_sdiv_bym_1115_ols_ii, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_sdiv_bym_1115_est_2.tex",
+          fname_det = "OLS_es_sdiv_bym_1115_det_2.tex")
+
+
+#-------------------------------------------------------------------#
+#### E. OLS: School enrollment and child labor - JUL SDIV 11-16 ####
+#-------------------------------------------------------------------#
+# 1. JHS
+lfs_jhs_sdiv_jul_1116_ols <- list()
+
+lfs_jhs_sdiv_jul_1116_ols[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ log(realusd_mooepp_jhs_sdiv)  |
+                                          sdiv_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_ols[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ log(realusd_mooepp_jhs_sdiv) + .[cvars] |
+                                          sdiv_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_ols[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        worked_past7 ~ log(realusd_mooepp_jhs_sdiv)  |
+                                          sdiv_2018 + year,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_ols[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        worked_past7 ~ log(realusd_mooepp_jhs_sdiv) + .[cvars]  |
+                                          sdiv_2018 + year,
+                                        weights = ~ r_pwgt)
+
+
+
+# 2. ES
+lfs_es_sdiv_jul_1116_ols <- list()
+
+lfs_es_sdiv_jul_1116_ols[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ log(realusd_mooepp_es_sdiv)  |
+                                         sdiv_2018 + year,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_ols[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ log(realusd_mooepp_es_sdiv) + .[cvars] |
+                                         sdiv_2018 + year,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_ols[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ log(realusd_mooepp_es_sdiv)  |
+                                         sdiv_2018 + year,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_ols[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ log(realusd_mooepp_es_sdiv) + .[cvars]  |
+                                         sdiv_2018 + year,
+                                       weights = ~ r_pwgt)
+
+
+#### 5. Export tables: OLS JUL SDIV 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_jul_1116_ols, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_jhs_sdiv_jul_1116_est.tex",
+          fname_det = "OLS_jhs_sdiv_jul_1116_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_jul_1116_ols, sep = TRUE,
+          xvar_raw = c("log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "OLS_es_sdiv_jul_1116_est.tex",
+          fname_det = "OLS_es_sdiv_jul_1116_det.tex")
+
+
+
+#-------------------------------------------------------------------#
+#### F. IV1: School enrollment and child labor - JOJ HUC 11-17 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_huc_joj_1116_iv1 <- list()
+
+lfs_jhs_huc_joj_1116_iv1[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv1[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv1[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv1[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                       weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_huc_joj_1116_iv1 <- list()
+
+
+lfs_es_huc_joj_1116_iv1[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv1[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv1[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                       weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv1[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                       weights = ~ r_pwgt)
+
+
+
+# 3. JHS (by month)
+lfs_jhs_huc_bym_1116_iv1_i <- list() # ed_schatt
+lfs_jhs_huc_bym_1116_iv1_ii <- list() # worked_past7
+
+lfs_jhs_huc_bym_1116_iv1_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year + svymo |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv1_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv1_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv1_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv1_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                          worked_past7 ~ .[cvars] |
+                                           huc_2018 + year + svymo |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv1_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                          worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv1_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                          worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv1_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                          worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ prcst_sim_mooe_jhs_huc,
+                                         weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+lfs_es_huc_bym_1116_iv1_i <- list() # ed_schatt
+lfs_es_huc_bym_1116_iv1_ii <- list() # worked_past7
+
+lfs_es_huc_bym_1116_iv1_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year + svymo |
+                                          log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv1_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv1_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv1_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv1_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year + svymo |
+                                           log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                          weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv1_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                          weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv1_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                          weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv1_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ prcst_sim_mooe_es_huc,
+                                          weights = ~ r_pwgt)
+
+
+#### 5. Export table: IV1 JOJ HUC 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_huc_joj_1116_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_huc_joj_1116_est.tex",
+          fname_det = "IV1_jhs_huc_joj_1116_det.tex")
+
+
+kc_regtex(lfs_es_huc_joj_1116_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_huc_joj_1116_est.tex",
+          fname_det = "IV1_es_huc_joj_1116_det.tex")
+
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_huc_bym_1116_iv1_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_huc_bym_1116_est_1.tex",
+          fname_det = "IV1_jhs_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_jhs_huc_bym_1116_iv1_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_huc_bym_1116_est_2.tex",
+          fname_det = "IV1_jhs_huc_bym_1116_det_2.tex")
+
+
+kc_regtex(lfs_es_huc_bym_1116_iv1_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_huc_bym_1116_est_1.tex",
+          fname_det = "IV1_es_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_es_huc_bym_1116_iv1_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_huc_bym_1116_est_2.tex",
+          fname_det = "IV1_es_huc_bym_1116_det_2.tex")
+
+#-------------------------------------------------------------------#
+#### G. IV1: School enrollment and child labor - JOJ SDIV 11-15 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_sdiv_joj_1115_iv1 <- list()
+
+lfs_jhs_sdiv_joj_1115_iv1[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ 1 |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv1[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ .[cvars] |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv1[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ 1 |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv1[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ .[cvars] |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                       weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_sdiv_joj_1115_iv1 <- list()
+
+
+lfs_es_sdiv_joj_1115_iv1[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                      ed_schatt ~ 1 |
+                                        sdiv_2018 + year + svymo |
+                                        log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                      weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv1[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                      ed_schatt ~ .[cvars] |
+                                        sdiv_2018 + year + svymo |
+                                        log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                      weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv1[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                      worked_past7 ~ 1 |
+                                        sdiv_2018 + year + svymo |
+                                        log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                      weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv1[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                      worked_past7 ~ .[cvars] |
+                                        sdiv_2018 + year + svymo |
+                                        log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                      weights = ~ r_pwgt)
+
+
+
+# 3. JHS (by month)
+lfs_jhs_sdiv_bym_1115_iv1_i <- list() # ed_schatt
+lfs_jhs_sdiv_bym_1115_iv1_ii <- list() # worked_past7
+
+lfs_jhs_sdiv_bym_1115_iv1_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year + svymo |
+                                           log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv1_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv1_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv1_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv1_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year + svymo |
+                                            log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv1_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv1_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv1_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                          weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+lfs_es_sdiv_bym_1115_iv1_i <- list() # ed_schatt
+lfs_es_sdiv_bym_1115_iv1_ii <- list() # worked_past7
+
+lfs_es_sdiv_bym_1115_iv1_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                        weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv1_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                        weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv1_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                        weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv1_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                        weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv1_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                         worked_past7 ~ .[cvars] |
+                                           sdiv_2018 + year + svymo |
+                                           log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv1_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                         worked_past7 ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv1_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                         worked_past7 ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv1_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                         worked_past7 ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                         weights = ~ r_pwgt)
+
+
+#### 5. Export table: IV1 JOJ SDIV 11-15 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_joj_1115_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_sdiv_joj_1115_est.tex",
+          fname_det = "IV1_jhs_sdiv_joj_1115_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_joj_1115_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_sdiv_joj_1115_est.tex",
+          fname_det = "IV1_es_sdiv_joj_1115_det.tex")
+
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_sdiv_bym_1115_iv1_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_sdiv_bym_1115_est_1.tex",
+          fname_det = "IV1_jhs_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_jhs_sdiv_bym_1115_iv1_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_sdiv_bym_1115_est_2.tex",
+          fname_det = "IV1_jhs_sdiv_bym_1115_det_2.tex")
+
+
+kc_regtex(lfs_es_sdiv_bym_1115_iv1_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_sdiv_bym_1115_est_1.tex",
+          fname_det = "IV1_es_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_es_sdiv_bym_1115_iv1_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_sdiv_bym_1115_est_2.tex",
+          fname_det = "IV1_es_sdiv_bym_1115_det_2.tex")
+
+
+
+#-------------------------------------------------------------------#
+#### H. IV1: School enrollment and child labor - JUL SDIV 11-16 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_sdiv_jul_1116_iv1 <- list()
+
+lfs_jhs_sdiv_jul_1116_iv1[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ 1 |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv1[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv1[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ 1 |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv1[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ .[cvars] |
+                                          sdiv_2018 + year |
+                                          log(realusd_mooepp_jhs_sdiv) ~ prcst_sim_mooe_jhs_sdiv,
+                                        weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_sdiv_jul_1116_iv1 <- list()
+
+
+lfs_es_sdiv_jul_1116_iv1[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ 1 |
+                                         sdiv_2018 + year |
+                                         log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv1[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ .[cvars] |
+                                         sdiv_2018 + year |
+                                         log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv1[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ 1 |
+                                         sdiv_2018 + year |
+                                         log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv1[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ .[cvars] |
+                                         sdiv_2018 + year |
+                                         log(realusd_mooepp_es_sdiv) ~ prcst_sim_mooe_es_sdiv,
+                                       weights = ~ r_pwgt)
+
+
+
+
+#### 5. Export table: IV1 JUL SDIV 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_jul_1116_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_jhs_sdiv_jul_1116_est.tex",
+          fname_det = "IV1_jhs_sdiv_jul_1116_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_jul_1116_iv1, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV1_es_sdiv_jul_1116_est.tex",
+          fname_det = "IV1_es_sdiv_jul_1116_det.tex")
+
+
+#-------------------------------------------------------------------#
+#### I. IV2: School enrollment and child labor - JOJ HUC 11-17 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_huc_joj_1116_iv2 <- list()
+
+lfs_jhs_huc_joj_1116_iv2[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv2[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv2[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ 1 |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                       weights = ~ r_pwgt)
+
+lfs_jhs_huc_joj_1116_iv2[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                         filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ .[cvars] |
+                                         huc_2018 + year + svymo |
+                                         log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                       weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_huc_joj_1116_iv2 <- list()
+
+
+lfs_es_huc_joj_1116_iv2[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      ed_schatt ~ 1 |
+                                        huc_2018 + year + svymo |
+                                        log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv2[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      ed_schatt ~ .[cvars] |
+                                        huc_2018 + year + svymo |
+                                        log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv2[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      worked_past7 ~ 1 |
+                                        huc_2018 + year + svymo |
+                                        log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                      weights = ~ r_pwgt)
+
+lfs_es_huc_joj_1116_iv2[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                        filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                      worked_past7 ~ .[cvars] |
+                                        huc_2018 + year + svymo |
+                                        log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                      weights = ~ r_pwgt)
+
+
+# 3. JHS (by month)
+lfs_jhs_huc_bym_1116_iv2_i <- list() # ed_schatt
+lfs_jhs_huc_bym_1116_iv2_ii <- list() # worked_past7
+
+lfs_jhs_huc_bym_1116_iv2_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year + svymo |
+                                           log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv2_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv2_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                         weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv2_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         ed_schatt ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                         weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv2_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year + svymo |
+                                            log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_huc_bym_1116_iv2_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 7),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                            log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv2_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 10),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                            log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_huc_bym_1116_iv2_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016 & svymo == 1),
+                                          worked_past7 ~ .[cvars] |
+                                            huc_2018 + year |
+                                            log(realusd_mooepp_jhs_huc) ~ asinh(iv_mooepp_jhs_huc),
+                                          weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+lfs_es_huc_bym_1116_iv2_i <- list() # ed_schatt
+lfs_es_huc_bym_1116_iv2_ii <- list() # worked_past7
+
+lfs_es_huc_bym_1116_iv2_i[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ .[cvars] |
+                                          huc_2018 + year + svymo |
+                                          log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv2_i[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                        ed_schatt ~ .[cvars] |
+                                          huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                        weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv2_i[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                        ed_schatt ~ .[cvars] |
+                                          huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                        weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv2_i[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                          filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                        ed_schatt ~ .[cvars] |
+                                          huc_2018 + year |
+                                          log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                        weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv2_ii[[1]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                         worked_past7 ~ .[cvars] |
+                                           huc_2018 + year + svymo |
+                                           log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                         weights = ~ r_pwgt)
+
+lfs_es_huc_bym_1116_iv2_ii[[2]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 7),
+                                         worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv2_ii[[3]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 10),
+                                         worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_huc_bym_1116_iv2_ii[[4]] <- feols(data = lfs_ana_joj_0917 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016 & svymo == 1),
+                                         worked_past7 ~ .[cvars] |
+                                           huc_2018 + year |
+                                           log(realusd_mooepp_es_huc) ~ asinh(iv_mooepp_es_huc),
+                                         weights = ~ r_pwgt)
+
+#### 5. Export table: IV2 JOJ HUC 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+
+kc_regtex(lfs_jhs_huc_joj_1116_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_huc_joj_1116_est.tex",
+          fname_det = "IV2_jhs_huc_joj_1116_det.tex")
+
+
+kc_regtex(lfs_es_huc_joj_1116_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_huc_joj_1116_est.tex",
+          fname_det = "IV2_es_huc_joj_1116_det.tex")
+
+
+# [ii] By month
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_huc_bym_1116_iv2_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_huc_bym_1116_est_1.tex",
+          fname_det = "IV2_jhs_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_jhs_huc_bym_1116_iv2_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_huc_bym_1116_est_2.tex",
+          fname_det = "IV2_jhs_huc_bym_1116_det_2.tex")
+
+
+kc_regtex(lfs_es_huc_bym_1116_iv2_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_huc_bym_1116_est_1.tex",
+          fname_det = "IV2_es_huc_bym_1116_det_1.tex")
+
+kc_regtex(lfs_es_huc_bym_1116_iv2_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_huc)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_huc_bym_1116_est_2.tex",
+          fname_det = "IV2_es_huc_bym_1116_det_2.tex")
+
+
+#-------------------------------------------------------------------#
+#### J. IV2: School enrollment and child labor - JOJ SDIV 11-15 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_sdiv_joj_1115_iv2 <- list()
+
+lfs_jhs_sdiv_joj_1115_iv2[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ 1 |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv2[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv2[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ 1 |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_joj_1115_iv2[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                        worked_past7 ~ .[cvars] |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_sdiv_joj_1115_iv2 <- list()
+
+
+lfs_es_sdiv_joj_1115_iv2[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ 1 |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv2[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       ed_schatt ~ .[cvars] |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv2[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ 1 |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_joj_1115_iv2[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                       worked_past7 ~ .[cvars] |
+                                         sdiv_2018 + year + svymo |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+
+
+# 3. JHS (by month)
+lfs_jhs_sdiv_bym_1115_iv2_i <- list() # ed_schatt
+lfs_jhs_sdiv_bym_1115_iv2_ii <- list() # worked_past7
+
+lfs_jhs_sdiv_bym_1115_iv2_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                          ed_schatt ~ .[cvars] |
+                                            sdiv_2018 + year + svymo |
+                                            log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv2_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                          ed_schatt ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv2_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                          ed_schatt ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                          weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv2_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                          ed_schatt ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                          weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv2_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015),
+                                           worked_past7 ~ .[cvars] |
+                                             sdiv_2018 + year + svymo |
+                                             log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                           weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_bym_1115_iv2_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 7),
+                                           worked_past7 ~ .[cvars] |
+                                             sdiv_2018 + year |
+                                             log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                           weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv2_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 10),
+                                           worked_past7 ~ .[cvars] |
+                                             sdiv_2018 + year |
+                                             log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                           weights = ~ r_pwgt)
+
+
+lfs_jhs_sdiv_bym_1115_iv2_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                             filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2015 & svymo == 1),
+                                           worked_past7 ~ .[cvars] |
+                                             sdiv_2018 + year |
+                                             log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                           weights = ~ r_pwgt)
+
+
+
+# 4. ES (by month)
+lfs_es_sdiv_bym_1115_iv2_i <- list() # ed_schatt
+lfs_es_sdiv_bym_1115_iv2_ii <- list() # worked_past7
+
+lfs_es_sdiv_bym_1115_iv2_i[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year + svymo |
+                                           log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv2_i[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv2_i[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                         weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv2_i[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                           filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                         ed_schatt ~ .[cvars] |
+                                           sdiv_2018 + year |
+                                           log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                         weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv2_ii[[1]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year + svymo |
+                                            log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                          weights = ~ r_pwgt)
+
+lfs_es_sdiv_bym_1115_iv2_ii[[2]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 7),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                          weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv2_ii[[3]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 10),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                          weights = ~ r_pwgt)
+
+
+lfs_es_sdiv_bym_1115_iv2_ii[[4]] <- feols(data = lfs_ana_joj_0915 %>%
+                                            filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2015 & svymo == 1),
+                                          worked_past7 ~ .[cvars] |
+                                            sdiv_2018 + year |
+                                            log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                          weights = ~ r_pwgt)
+
+
+#### 5. Export table: IV2 JOJ SDIV 11-15 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_joj_1115_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_sdiv_joj_1115_est.tex",
+          fname_det = "IV2_jhs_sdiv_joj_1115_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_joj_1115_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_sdiv_joj_1115_est.tex",
+          fname_det = "IV2_es_sdiv_joj_1115_det.tex")
+
+# [ii] By month
+# 4 columns of results (1 for full; 3 for july, october, january)
+# _i: depvar is ed_schatt; _ii: depvar is worked_past7
+kc_regtex(lfs_jhs_sdiv_bym_1115_iv2_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_sdiv_bym_1115_est_1.tex",
+          fname_det = "IV2_jhs_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_jhs_sdiv_bym_1115_iv2_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_sdiv_bym_1115_est_2.tex",
+          fname_det = "IV2_jhs_sdiv_bym_1115_det_2.tex")
+
+
+kc_regtex(lfs_es_sdiv_bym_1115_iv2_i, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_sdiv_bym_1115_est_1.tex",
+          fname_det = "IV2_es_sdiv_bym_1115_det_1.tex")
+
+kc_regtex(lfs_es_sdiv_bym_1115_iv2_ii, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_sdiv_bym_1115_est_2.tex",
+          fname_det = "IV2_es_sdiv_bym_1115_det_2.tex")
+
+
+#-------------------------------------------------------------------#
+#### K. IV2: School enrollment and child labor - JUL SDIV 11-16 ####
+#-------------------------------------------------------------------#
+# 1. JHS (all 3 months)
+lfs_jhs_sdiv_jul_1116_iv2 <- list()
+
+lfs_jhs_sdiv_jul_1116_iv2[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ 1 |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv2[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        ed_schatt ~ .[cvars] |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv2[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        worked_past7 ~ 1 |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+lfs_jhs_sdiv_jul_1116_iv2[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                          filter(r_age >=12 & r_age <=15 & year >= 2011 & year <= 2016),
+                                        worked_past7 ~ .[cvars] |
+                                          sdiv_2018 + year + svymo |
+                                          log(realusd_mooepp_jhs_sdiv) ~ asinh(iv_mooepp_jhs_sdiv),
+                                        weights = ~ r_pwgt)
+
+
+# 2. ES (all 3 months)
+lfs_es_sdiv_jul_1116_iv2 <- list()
+
+
+lfs_es_sdiv_jul_1116_iv2[[1]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ 1 |
+                                         sdiv_2018 + year  |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv2[[2]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       ed_schatt ~ .[cvars] |
+                                         sdiv_2018 + year  |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv2[[3]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ 1 |
+                                         sdiv_2018 + year  |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+lfs_es_sdiv_jul_1116_iv2[[4]] <- feols(data = lfs_ana_jul_0916 %>%
+                                         filter(r_age >=6 & r_age <=11 & year >= 2011 & year <= 2016),
+                                       worked_past7 ~ .[cvars] |
+                                         sdiv_2018 + year  |
+                                         log(realusd_mooepp_es_sdiv) ~ asinh(iv_mooepp_es_sdiv),
+                                       weights = ~ r_pwgt)
+
+
+#### 5. Export table: IV2 JUL SDIV 11-16 ####
+# [i] All 3 months
+# 4 columns of results (2 for ed_schatt; 2 for worked_past7)
+kc_regtex(lfs_jhs_sdiv_jul_1116_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_jhs_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_jhs_sdiv_jul_1116_est.tex",
+          fname_det = "IV2_jhs_sdiv_jul_1116_det.tex")
+
+
+kc_regtex(lfs_es_sdiv_jul_1116_iv2, sep = TRUE,
+          xvar_raw = c("fit_log(realusd_mooepp_es_sdiv)"),
+          xvar_lbl = c("log(PPOE)"),
+          gof_stat = c("nobs", "ivwald"),
+          path = paste0(explrpath, "Tables/LFS/"),
+          fname_est = "IV2_es_sdiv_jul_1116_est.tex",
+          fname_det = "IV2_es_sdiv_jul_1116_det.tex")

@@ -1,0 +1,400 @@
+#### Bliss Point Media
+# Submitted by: Kenn Chua
+
+
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries ####
+#-------------------------------------------------------------------#
+# 1. Load libraries
+if (!require('pacman')) install.packages('pacman')
+
+pacman::p_load('tidyverse', 'tidytable')
+#pacman::p_load('readxl', 'openxlsx', 'haven')
+pacman::p_load('ggplot2', 'patchwork', 'hrbrthemes', 'viridis')
+pacman::p_load('fixest', 'did', 'modelsummary')
+#pacman::p_load('sf', 'rmapshaper', 'units')
+#pacman::p_load('tidymodels', 'glmnet', 'ranger', 'xgboost')
+
+pacman::p_load('kctools') # own package
+
+# 2. Set directories
+dir_kc <- "/Users/kenngarrychua/Downloads/Econometrics Assessment Data/"
+dir_bp <- "" # Other users
+
+dir_main <- dir_kc # Change this
+
+
+#-------------------------------------------------------------------#
+#### B. Import and explore data ####
+#-------------------------------------------------------------------#
+# 1. Import raw data
+impression_raw <- read_csv(paste0(dir_main, "econometrics_assessment_impression_data.csv"), skip = 1,
+                           col_names = c("uid", "impress_tmst", "network", "creative"))
+
+order_raw <- read_csv(paste0(dir_main, "econometrics_assessment_order_data.csv"), skip = 1,
+                      col_names = c("uid", "order_tmst", "order_val"))
+
+
+# 2. Explore data
+# 2a) Dates
+impression_raw |> 
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  summarize(min_date = min(impress_date), max_date = max(impress_date))
+# December 31, 2020 - June 29, 2021
+
+
+order_raw |>
+  mutate(order_date = as.Date(order_tmst)) |>
+  summarize(min_date = min(order_date), max_date = max(order_date))
+# January 1, 2021 - June 29, 2021
+
+
+# 2b) Networks and creatives
+impression_raw |> count(network, creative) # 5 networks; 3 creatives (A, B, C)
+
+impression_raw |> 
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  group_by(creative, network) |>
+  summarize(min_date = min(impress_date), max_date = max(impress_date))
+
+# Creatives A, B, C are viewed in all networks on the same start and end dates
+# BEESWAX: Jan. 10 - Jun. 29
+# DISC: Dec. 31 - Apr. 07
+# NBC: Jan. 12 - Jun. 29
+# NFL: Feb. 10 - Jun. 29
+# TELARIA: Jan. 10 - Jun. 29
+
+
+# 2c) Impressions and orders over time
+impression_cre_by_wk <- impression_raw |>
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  mutate(impress_week = lubridate::week(impress_date)) |>
+  mutate(impress_week = if_else(impress_date == lubridate::ymd("2020-12-31"), 1, impress_week)) |>
+  group_by(creative, impress_week) |>
+  count() 
+
+impression_nwk_by_wk <- impression_raw |>
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  mutate(impress_week = lubridate::week(impress_date)) |>
+  mutate(impress_week = if_else(impress_date == lubridate::ymd("2020-12-31"), 1, impress_week)) |>
+  group_by(network, impress_week) |>
+  count() 
+
+impression_can_by_wk <- impression_raw |>
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  mutate(impress_week = lubridate::week(impress_date)) |>
+  mutate(impress_week = if_else(impress_date == lubridate::ymd("2020-12-31"), 1, impress_week)) |>
+  group_by(network, creative, impress_week) |>
+  count() 
+
+
+# Impressions by creatives
+ggplot(impression_cre_by_wk) +
+  geom_line(aes(x=impress_week, y=n, color = creative)) + 
+  xlab("") + 
+  geom_vline(xintercept = 13) +
+  theme_ipsum() 
+# significantly more impressions for A (relative to C) starting
+# significantly less impressions for B (relative to C and A) starting
+# parallel trends
+
+# Impressions by network
+ggplot(impression_nwk_by_wk) +
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+
+ggplot(impression_nwk_by_wk |> filter(network %in% c("BEESWAX", "TELARIA"))) + # larger 
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+# Beeswax and Telaria have similar trends for some periods
+
+ggplot(impression_nwk_by_wk |> filter(network %in% c("NBC", "NFL", "DISC"))) + # smaller
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+# NBC and NFL have similar-ish trends for some periods 
+
+# Impressions by creatives and network
+ggplot(impression_can_by_wk |> filter(creative %in% c("Creative A"))) +
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+# jump in NBC (compare to NFL?)
+# jump in BEESWAX (compare to Telaria?)
+
+ggplot(impression_can_by_wk |> filter(creative %in% c("Creative B"))) +
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+ 
+
+ggplot(impression_can_by_wk |> filter(creative %in% c("Creative C"))) +
+  geom_line(aes(x=impress_week, y=n, color = network)) + 
+  xlab("") + 
+  theme_ipsum()
+# jump in BEESWAX (compare to Telaria?)
+
+
+#-------------------------------------------------------------------#
+#### C. Prepare data for analysis ####
+#-------------------------------------------------------------------#
+# 1. IDs in client data but not in Bliss Point data
+notinbp <- setdiff(order_raw |> distinct(uid) |> pull(uid),
+                   impression_raw |> distinct(uid) |> pull(uid))
+
+
+# 1. Create master id 
+master_id <- full_join(impression_raw |> distinct(uid),
+                       order_raw |> distinct(uid),
+                       by = c("uid")) |>
+  filter(! uid %in% notinbp) |> # exclude those not in BP data
+  mutate(master_id = row_number())
+  
+  
+  
+# 2. Data for creatives analysis
+# 2a) Details from impression data
+creative_bld <- impression_raw |>
+  left_join(master_id, by = c("uid")) |>
+  mutate(impress_date = as.Date(impress_tmst)) |>
+  mutate(impress_week = lubridate::week(impress_date)) |>
+  mutate(impress_week = if_else(impress_date == lubridate::ymd("2020-12-31"), 1, impress_week)) |>
+  select(master_id, impress_week, network, creative) |>
+  arrange(master_id, impress_week) |>
+  mutate(is_creative_a = case_when(creative == "Creative A" ~ 1,
+                                   TRUE ~ 0),
+         is_creative_b = case_when(creative == "Creative B" ~ 1,
+                                   TRUE ~ 0),
+         is_creative_c = case_when(creative == "Creative C" ~ 1,
+                                   TRUE ~ 0)) |>
+  group_by(master_id) |>
+  mutate(has_creative_a = max(is_creative_a),
+         has_creative_b = max(is_creative_b),
+         has_creative_c = max(is_creative_c)) |> 
+  ungroup() |>
+  group_by(master_id, creative) |>
+  mutate(min_creative_wk = min(impress_week, na.rm = TRUE)) |> # first exposure to creative
+  mutate(min_creative_nwk = if_else(impress_week == min_creative_wk, network, NA_character_)) |>
+  #mutate(creative_times = n()) |> # times exposed to a creative 
+  ungroup() |>
+  filter(!is.na(min_creative_nwk))
+
+# Timing of impression and network
+creative_bld_a <- creative_bld |>
+  filter(creative == "Creative A") |>
+  select(master_id, min_creative_wk_a = min_creative_wk, 
+         min_creative_nwk_a = min_creative_nwk) |>
+  distinct(master_id, min_creative_wk_a) 
+
+creative_bld_b <- creative_bld |>
+  filter(creative == "Creative B") |>
+  select(master_id, min_creative_wk_b = min_creative_wk, 
+         min_creative_nwk_b = min_creative_nwk) |>
+  distinct(master_id, min_creative_wk_b) 
+
+creative_bld_c <- creative_bld |>
+  filter(creative == "Creative C") |>
+  select(master_id, min_creative_wk_c = min_creative_wk, 
+         min_creative_nwk_c = min_creative_nwk) |>
+  distinct(master_id, min_creative_wk_c) 
+
+# User-level data
+creative_uid <- creative_bld |>
+  distinct(master_id, has_creative_a, has_creative_b, has_creative_c)
+
+# 2b) Details from order data
+order_bld <- order_raw |>
+  left_join(master_id, by = c("uid")) |>
+  filter(! master_id %in% notinbp) |>
+  mutate(order_date = as.Date(order_tmst)) |>
+  mutate(order_week = lubridate::week(order_date)) |>
+  mutate(order_week = if_else(order_date == lubridate::ymd("2020-12-31"), 1, order_week)) |>
+  select(master_id, order_week, order_val) |>
+  arrange(master_id, order_week) |>
+  group_by(master_id, order_week) |>
+  summarize(order_val = sum(order_val, na.rm = FALSE)) |>
+  ungroup()
+    
+# 2b) Panel for creative analysis
+creative_long <- expand_grid(master_id = master_id$master_id, 
+                             week = c(1:26)) |>
+  left_join(creative_uid,
+            by = c("master_id")) |> 
+  left_join(creative_bld_a,
+            by = c("master_id")) |>
+  left_join(creative_bld_b,
+            by = c("master_id")) |>
+  left_join(creative_bld_c,
+            by = c("master_id")) |>
+  left_join(order_bld,
+            by = c("master_id", "week" = "order_week")) |>
+  mutate(order_val = ifelse(is.na(order_val), 0, order_val)) |>
+  mutate(order_dum = case_when(order_val > 0 ~ 1,
+                               order_val == 0 ~ 0))
+
+    
+# 2d) Analysis file for comparing...
+# [i] creative B vs. C only (week = 0 to week = 26)
+# User-week
+creative_bvc <- creative_long |>
+  filter(min_creative_wk_b >= 5 | is.na(min_creative_wk_b)) |> # drop treated with B before jump
+  filter(has_creative_b == 1 | has_creative_c == 1) |> 
+  filter(!(has_creative_b == 1 & has_creative_c == 1)) |> # drop those with B impressions and C impressions
+  filter(!(has_creative_b == 1 & has_creative_a == 1)) |> # drop those with B impressions and A impressions
+  mutate(min_creative_wk_b = ifelse(is.na(min_creative_wk_b), 0, min_creative_wk_b)) |>
+  mutate(post = ifelse(week >= 5, 1, 0),
+         postxtreat = post*has_creative_b) |>
+  mutate(reltime_m4 = ifelse(has_creative_b == 1 & week == 1, 1, 0),
+         reltime_m3 = ifelse(has_creative_b == 1 & week == 2, 1, 0),
+         reltime_m2 = ifelse(has_creative_b == 1 & week == 3, 1, 0),
+         reltime_m0 = ifelse(has_creative_b == 1 & week == 5, 1, 0),
+         reltime_p1 = ifelse(has_creative_b == 1 & week == 6, 1, 0),
+         reltime_p2 = ifelse(has_creative_b == 1 & week == 7, 1, 0),
+         reltime_p3 = ifelse(has_creative_b == 1 & week == 8, 1, 0),
+         reltime_p4 = ifelse(has_creative_b == 1 & week == 9, 1, 0),
+         reltime_p5 = ifelse(has_creative_b == 1 & week == 10, 1, 0),
+         reltime_p6 = ifelse(has_creative_b == 1 & week >= 11, 1, 0))
+
+
+# Aggregated at the creative-week level
+creative_bvc2 <- creative_bvc |>
+  group_by(has_creative_b, week) |>
+  summarize(across(c(order_dum, order_val), ~ mean(., na.rm = TRUE))) |>
+  ungroup() |>
+  mutate(post = ifelse(week >= 5, 1, 0),
+         postxtreat = post*has_creative_b) |>
+  mutate(reltime_m4 = ifelse(has_creative_b == 1 & week == 1, 1, 0),
+         reltime_m3 = ifelse(has_creative_b == 1 & week == 2, 1, 0),
+         reltime_m2 = ifelse(has_creative_b == 1 & week == 3, 1, 0),
+         reltime_m0 = ifelse(has_creative_b == 1 & week == 5, 1, 0),
+         reltime_p1 = ifelse(has_creative_b == 1 & week == 6, 1, 0),
+         reltime_p2 = ifelse(has_creative_b == 1 & week == 7, 1, 0),
+         reltime_p3 = ifelse(has_creative_b == 1 & week == 8, 1, 0),
+         reltime_p4 = ifelse(has_creative_b == 1 & week == 9, 1, 0),
+         reltime_p5 = ifelse(has_creative_b == 1 & week == 10, 1, 0),
+         reltime_p6 = ifelse(has_creative_b == 1 & week >= 11, 1, 0))
+
+
+saveRDS(creative_bvc, "~/Desktop/creative_bvc.rds")
+creative_bvc <- readRDS("~/Desktop/creative_bvc.rds")
+saveRDS(creative_bvc2, "~/Desktop/creative_bvc2.rds")
+# TWFE
+feols(data = creative_bvc,
+      order_dum ~ postxtreat | has_creative_b + post)
+
+feols(data = creative_bvc,
+      log(1+ order_val) ~ postxtreat | has_creative_b + post)
+
+# Event Study
+feols(data = creative_bvc,
+      order_dum ~ ..('reltime_') | has_creative_b + week)
+
+feols(data = creative_bvc,
+      log(1+ order_val) ~ ..('reltime_') | has_creative_b + week)
+
+
+# TWFE
+feols(data = creative_bvc2,
+      order_dum ~ postxtreat | has_creative_b + post)
+
+feols(data = creative_bvc2,
+      log(order_val) ~ postxtreat | has_creative_b + post)
+
+# Event Study
+feols(data = creative_bvc2,
+      order_dum ~ ..('reltime_') | has_creative_b + week)
+
+feols(data = creative_bvc2,
+      log(order_val) ~ ..('reltime_')  | has_creative_b + week,
+      vcov = "hetero")
+
+# [ii] creative B vs. A and C (week = 0 to week = 12)
+
+# [iii] creative A vs. C only (week = 0 to week = 26)
+creative_avc <- creative_long |>
+  filter(min_creative_wk_a >= 13 | is.na(min_creative_wk_a)) |> # drop treated with A before jump
+  filter(has_creative_a == 1 | has_creative_c == 1) |> 
+  filter(!(has_creative_a == 1 & has_creative_c == 1)) |> # drop those with C impressions and A impressions
+  filter(!(has_creative_a == 1 & has_creative_b == 1)) |> # drop those with B impressions and A impressions
+  mutate(min_creative_wk_a = ifelse(is.na(min_creative_wk_a), 0, min_creative_wk_a)) |>
+  mutate(post = ifelse(week >= 13, 1, 0),
+         postxtreat = post*has_creative_a) |>
+  mutate(reltime_m4 = ifelse(has_creative_a == 1 & week <= 10, 1, 0),
+         reltime_m3 = ifelse(has_creative_a == 1 & week == 11, 1, 0),
+         reltime_m2 = ifelse(has_creative_a == 1 & week == 12, 1, 0),
+         reltime_m0 = ifelse(has_creative_a == 1 & week == 13, 1, 0),
+         reltime_p1 = ifelse(has_creative_a == 1 & week == 14, 1, 0),
+         reltime_p2 = ifelse(has_creative_a == 1 & week == 15, 1, 0),
+         reltime_p3 = ifelse(has_creative_a == 1 & week == 16, 1, 0),
+         reltime_p4 = ifelse(has_creative_a == 1 & week == 17, 1, 0),
+         reltime_p5 = ifelse(has_creative_a == 1 & week == 18, 1, 0),
+         reltime_p6 = ifelse(has_creative_a == 1 & week >= 19, 1, 0))
+
+
+
+saveRDS(creative_avc, "~/Desktop/creative_avc.rds")
+
+creative_avc <- readRDS("~/Desktop/creative_avc.rds")
+
+creative_avc2 <- creative_avc |>
+  group_by(has_creative_a, week) |>
+  summarize(across(c(order_dum, order_val), ~ mean(., na.rm = TRUE))) |>
+  mutate(post = ifelse(week >= 13, 1, 0),
+         postxtreat = post*has_creative_a) |>
+  mutate(reltime_m4 = ifelse(has_creative_a == 1 & week <= 10, 1, 0),
+         reltime_m3 = ifelse(has_creative_a == 1 & week == 11, 1, 0),
+         reltime_m2 = ifelse(has_creative_a == 1 & week == 12, 1, 0),
+         reltime_m0 = ifelse(has_creative_a == 1 & week == 13, 1, 0),
+         reltime_p1 = ifelse(has_creative_a == 1 & week == 14, 1, 0),
+         reltime_p2 = ifelse(has_creative_a == 1 & week == 15, 1, 0),
+         reltime_p3 = ifelse(has_creative_a == 1 & week == 16, 1, 0),
+         reltime_p4 = ifelse(has_creative_a == 1 & week == 17, 1, 0),
+         reltime_p5 = ifelse(has_creative_a == 1 & week == 18, 1, 0),
+         reltime_p6 = ifelse(has_creative_a == 1 & week >= 19, 1, 0))
+
+saveRDS(creative_avc2, "~/Desktop/creative_avc2.rds")
+# TWFE
+feols(data = creative_avc,
+      order_dum ~ postxtreat | has_creative_a + post)
+
+feols(data = creative_avc,
+      log(1+ order_val) ~ postxtreat | has_creative_a + post)
+
+# Event Study
+feols(data = creative_avc,
+      order_dum ~ ..('reltime_') | has_creative_a + week)
+
+feols(data = creative_avc,
+      log(1+ order_val) ~ ..('reltime_') | has_creative_a + week)
+
+
+# TWFE
+feols(data = creative_avc2,
+      order_dum ~ postxtreat | has_creative_a + post)
+
+feols(data = creative_avc2,
+      log(order_val) ~ postxtreat | has_creative_a + post)
+
+# Event Study
+feols(data = creative_avc2,
+      order_dum ~ ..('reltime_') | has_creative_a + week)
+
+feols(data = creative_avc2,
+      log(order_val) ~ ..('reltime_')  | has_creative_a + week)
+# [iv] creative A vs. C and B (week = 10 to week = 26)
+
+
+
+# 3. 
+# Obtain week of earliest e
+
+# Obtain week of earliest exposure to each creative 
+
+# Obtain week of earliest exposure to net
+
+
+# Create panel dataset with 
+

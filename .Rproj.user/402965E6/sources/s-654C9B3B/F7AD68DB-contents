@@ -1,0 +1,297 @@
+##### Intermediate R Series: Useful packages and utilities
+# Introduction to Base R 
+
+#-------------------------------------------------------------------#
+#### A. Preliminaries ####
+#-------------------------------------------------------------------#
+# 1. Load packages
+if (!require('pacman')) install.packages('pacman')
+pacman::p_load('tidyverse', 'magrittr', 'nycflights13', 'gapminder')
+pacman::p_load('beepr')
+
+
+# 2. Set directory
+prj_dir <- "/Volumes/GoogleDrive/My Drive/Git/Intermediate_R/"
+
+
+#-------------------------------------------------------------------#
+#### B. Some useful commands and packages ####
+#-------------------------------------------------------------------#
+#### 1. pacman ####
+# 1a) p_load(): Loads packages and installs if not yet installed 
+if (!require('pacman')) install.packages('pacman')
+pacman::p_load('tidyverse', 'ggplot2', 'haven', 'xlsx', 'hrbrthemes', 'sf')
+pacman::p_load('beepr')
+
+# pacman does the checking whether the package is installed
+# we put the if-statement before it to install pacman in case it is not yet installed 
+
+# 1b) p_unload(): Unloads packages that are loaded
+pacman::p_unload('beepr')
+pacman::p_unload(all) # unloads all packages that are loaded 
+
+# 1c) p_loaded(): Checks whether a set of packages are already loaded 
+pacman::p_load('ggplot2', 'haven')
+pacman::p_loaded('ggplot2', 'haven') # yields a named vector 
+
+# 1d) p_version(): Checks version of package
+pacman::p_version('ggplot2')
+
+# 1e) p_data(): Checks available data sets in the package
+pacman::p_data('ggplot2')
+
+# 1f) p_vignette(): Check package vignettes
+pacman::p_vignette('ggplot2')
+
+# 1g) p_update(): Update out-of-date packages
+
+# 1h) p_isinstalled(): Check if package is installed
+pacman::p_isinstalled('ggplot2')
+
+
+
+#### 2. beepr ####
+# Useful package to create a sound once a point in a code is reached
+beepr::beep('fanfare')
+beepr::beep('mario')
+
+
+#### 3. conflicted ####
+# Useful package to deal with namespace conflicts
+conflicted::conflict_scout() # displays namespace conflicts
+conflicted::conflict_prefer("command_name", "package_name") # set command to prioritize
+
+
+#### 4. renv ####
+# See Sean Higgins' R guide 
+renv::init() # develops a local library of the packages employed in a project
+# Creates 
+
+#### 5. base::substitute and base::deparse ####
+# Useful for incorporating non-standard evaluation in functions 
+# Example:
+my_val <- 100
+
+my_fun <- function(arg) {
+  list(arg, # evaluates the argument   
+       quote(arg), # literally encloses argument in quotes
+       substitute(arg), # returns the "parse tree" of the unevaluated argument 
+       deparse(substitute(arg))) # turns unevaluated expressions into character strings 
+}
+
+my_fun(my_val)
+
+# Example: 
+my_lm <- function(df, yvar, xvar) {
+  yvar = deparse(substitute(yvar))
+  xvar = deparse(substitute(xvar))
+  formula = paste(yvar , "~", xvar)
+  lm(as.formula(formula), data = df)
+  # print(formula)
+}
+
+my_lm(mpg, cty, hwy)
+
+
+#### 6. curly curly brackets {{}} in rlang ####
+# rlang offers a way to design function around the tidyverse pipeline 
+# In particular, we can wrap arguments which call data frame variables around {{}} when writing functions with tidyverse pipes
+# More on this in Section C.
+
+# Example: General ggplot functions
+scatter_plot <- function(df, yvar, xvar) {
+  ggplot(data = df) +
+    geom_point(aes({{yvar}}, {{xvar}}))
+}
+
+scatter_plot(mpg, cty, hwy)
+
+
+# Example: Custom verbs with dplyr - summarize by
+summarize_by <- function(data, ..., by) {
+  data %>% 
+    group_by({{ by }}) %>% 
+    summarize(across(c(...), 
+                     list(avg = ~ mean(., na.rm = TRUE), 
+                          sdv = ~ sd(., na.rm = TRUE), 
+                          count = ~n(),
+                          missing = ~ sum(is.na(.))),
+                     .names = "{fn}_{col}"))
+}
+
+summarize_by(mpg, cty, hwy, displ, by = manufacturer)
+
+# Example: Custom verbs with dplyr - count with proportion
+tabulate <- function(df, ..., by, dropNA = FALSE) {
+  df %>% 
+    {if (dropNA == TRUE) drop_na(.) else .} %>%
+    group_by({{ by }}) %>% 
+    count(...) %>% 
+    ungroup() %>% 
+    mutate(prop = n/sum(n))
+}
+
+tabulate(mpg) # counts all observations in sample 
+tabulate(mpg, model) # counts observations by model
+tabulate(mpg, by = manufacturer) # counts observations by manufacturer
+tabulate(mpg, model, by = manufacturer) # counts models by manufacturer 
+tabulate(flights)
+tabulate(flights, dropNA = TRUE)
+
+# Aside: We can only use {{ }} one variable at a time. So not applicable to use {{ }} inside group_by(). 
+# Instead, we should place ... inside group_by_ and feed it strings. 
+tabulate2 <- function(df, ..., dropNA = FALSE) {
+  df %>% 
+    {if (dropNA == TRUE) drop_na(.) else .} %>%
+    group_by(...) %>% # when passing multiple group_by arguments...
+    count() %>% 
+    ungroup() %>% 
+    mutate(prop = n/sum(n))
+}
+tabulate2(mpg, model, year)
+
+
+#-------------------------------------------------------------------#
+#### C. Programming with dplyr ####
+#-------------------------------------------------------------------#
+# 1. Most dplyr verbs use tidy evaluation, which is a special type of non-standard evaluation 
+# "Talking about whether an argument is quoted or evaluated is a more precise way of stating whether or not a function uses NSE." - Hadley Wickham
+# Two most common forms of tidy evaluation: data-masking and tidy-selection
+# 1a) Data-masking
+# [i] Allows user to refer to variables within a data fram without repeating the name of the data frame
+mpg %>% filter(year == 1999) # here filter uses data-masking 
+ggplot(mpg) %>% geom_point(aes(cty, hwy)) # here aes() uses data-masking
+
+# Examples of other dplyr verbs using data masking: count(), group_by(), mutate(), summarize() 
+
+# [ii] env-variables vs. data-variables
+# The idea behind data masking is that it blurs the lines between "programming" variables that live in an environment
+# and "statistical" variables that live in a data frame 
+
+# For instance, when we create a data frame 'df' using <- as below, we assign it to be an env-variable
+# In order to extract the data-variable x, we use the $.
+df <- data.frame(x = runif(3), y = runif(3))
+df$x
+
+# [iii] When writing functions, the argument is an env-variable that holds a promise of returning a particular value defined in the local/global environment. 
+# If you want to pass a data-variable as a function argument, you need to "embrace" it around double curly braces.
+my_summary_1 <- function(data, var) {
+  data %>% 
+    summarize(n = n(), min = min({{var}}), max = max({{var}}))
+}
+mpg %>% 
+  my_summary_1(cty) 
+
+
+# 1b) Tidy-selection
+# [i] Provides a concise way of selecting columns by position, name, or type 
+mpg %>% pull(1)
+mpg %>% select(where(is.character))
+
+# Examples of other dplyr verbs using tidy-selection: across(), where(), relocate(), rename(), select(), pull() 
+
+
+# [ii] Similar to data-masking, if you want to pass a data-variable as a function argument within tidyselect, simply embrace the data-variable. 
+my_summary_2 <- function(data, vars) {
+  data %>% 
+    summarize(n = n(), across({{vars}}, 
+                              list(min = ~ min(., na.rm = TRUE), 
+                                   max = ~ max(., na.rm = TRUE)))
+    )
+}
+
+mpg %>% 
+  group_by(manufacturer) %>%
+  my_summary_2(where(is.numeric))
+
+# [iii] If you want to refer to env-variables within tidyselect operators, you need to wrap these vectors around any_of() or all_of()
+my_vars <- c("manufacturer", "year", "displ", "cyl")
+
+mpg %>% select(my_vars) # see error message
+mpg %>% select(all_of(my_vars)) # all_of() will return an error if some of the variables don't exist; any_of will ignore it
+
+
+
+# 2. Use cases
+# Referring to one or more data-variables (data-masking)
+compute_summary <- function(df, var1, var2) {
+  df %>% 
+    group_by({{var1}}) %>% 
+    summarize(mean = mean({{var2}}),
+              sd = sd({{var2}}))
+}
+
+mpg %>% compute_summary(manufacturer, cty)
+
+# Referring to one or more data-variables (tidy-selection)
+compute_mean <- function(data, vars) {
+  data %>% 
+    summarise(across({{ vars }}, ~ mean(., na.rm = TRUE)))
+}
+
+mpg %>% compute_mean(cty)
+mpg %>% compute_mean(where(is.numeric))
+mpg %>% compute_mean(starts_with("c"))
+
+# Using the variable names in the output of the function; use :=  
+process_var <- function(df, var) {
+    df %>%
+      select({{var}}) %>% 
+      mutate(
+        "log1_{{var}}" := log({{var}}) + 1, # define log(x) + 1
+        "log2_{{var}}" := log(1 + {{var}}) # define log(1 + x)
+      )
+}
+
+mpg %>% process_var(cty)
+
+# Referring to any number of user-supplied expressions 
+tabulate2 <- function(df, ..., dropNA = FALSE) {
+  df %>% 
+    {if (dropNA == TRUE) drop_na(.) else .} %>%
+    group_by(...) %>% # recall group_by() is a data-masking verb
+    count() %>% 
+    ungroup() %>% 
+    mutate(prop_all = n/sum(n))
+}
+mpg %>% tabulate2(manufacturer, model, year)
+
+
+#-------------------------------------------------------------------#
+#### D. Base R pipe (new in 4.1) vs. magrittr pipe ####
+#-------------------------------------------------------------------#
+# 1. The base R pipe is |>
+
+
+# 2. Key differences with magrittr
+# 2a) The base R pipe feeds the output of the previous line in the first argument of the next line
+
+# 2b) Whenever the output of the previous line is fed to a function or conditional, the line should be wrapped in braces like so:
+# {\(x) if (x != 0) x else "NA_"}()
+
+
+#-------------------------------------------------------------------#
+#### E. Loading and exporting .dta files using haven ####
+#-------------------------------------------------------------------#
+# 1. Loading Stata files
+# read_dta() 
+
+# 2. Modifying Stata files
+# 2a) Add / remove variable labels
+# zap_label()
+# mutate(varname = labelled(varname, label = "Variable Name")) # singular refers to variable label
+
+# 2b) Add / remove value labels
+# zap_labels()
+# mutate(varname = labelled(varname, labels = c(Male = 1, Female = 2))) # plural refers to value labels
+
+# 3. Export Stata files
+# write_dta()
+
+
+#-------------------------------------------------------------------#
+#### F. References ####
+#-------------------------------------------------------------------#
+# https://www.r-bloggers.com/2019/07/bang-bang-how-to-program-with-dplyr/amp/
+# https://cran.r-project.org/web/packages/dplyr/vignettes/programming.html
+# https://mastering-shiny.org/action-tidy.html
