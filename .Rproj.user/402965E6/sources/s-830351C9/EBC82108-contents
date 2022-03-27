@@ -10,7 +10,6 @@ kc_regxls(
   coef_lbl = NULL,
   gof_lbl = NULL,
   rows_lbl = NULL,
-  note_lbl = NULL,
   fpath = "~/Desktop/",
   fname = "kc_mod_all.xlsx",
   ivwald = FALSE,
@@ -27,8 +26,6 @@ kc_regxls(
 \item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
 
 \item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
-
-\item{note_lbl}{A note to append to the bottom of the table}
 
 \item{fpath}{File path for output}
 
