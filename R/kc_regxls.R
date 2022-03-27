@@ -6,6 +6,7 @@
 #' @param coef_lbl Model estimates to report; using modelsummary's coef_map argument
 #' @param gof_lbl Model diagnostics to report; using modelsummary's gof_map argument
 #' @param rows_lbl Additional rows to be included; using modelsummary's add_rows argument
+#' @param note_lbl A note to append to the bottom of the table
 #' @param ivwald Report Kleibergen-Paap F-stat; using fixest's ivwald statistic
 #' @param fpath File path for output
 #' @param fname File name for output
