@@ -17,7 +17,7 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
   data |>
     tidytable::select.({{ byvar }}, {{ sumvar }}) |>
     tidytable::select.({{ byvar }}, where(is.numeric)) |>
-    tidytable::summarize.(across.(everything(),
+    tidytable::summarize.(tidytable::across.(everything(),
                                   list(avg = ~ mean(., na.rm = TRUE),
                                        sdv = ~ sd(., na.rm = TRUE),
                                        nobs = ~ tidytable::n.(),
