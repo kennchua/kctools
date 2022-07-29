@@ -6,7 +6,6 @@
 #' @param byvar The variables to group by. (optional)
 #' @return A data frame with descriptive stats: each var is a row; respective statistics are in column.
 #' @import tidytable
-#' @importFrom data.table :=
 #' @examples
 #' \dontrun{
 #' kcf_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp

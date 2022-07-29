@@ -5,7 +5,6 @@
 #' @param tabvar The variables to tabulate.
 #' @return A data frame with tabulation of counts and proportions.
 #' @import tidytable
-#' @importFrom data.table :=
 #' @examples
 #' \dontrun{
 #' kcf_tab(mtcars, c(vs)) # one-way tabulate
@@ -16,6 +15,6 @@
 kcf_tab <- function(data, tabvar, dropna = FALSE) {
   data |>
     {\(df) if (dropna == TRUE) tidytable::filter.(df, tidytable::across.(c({{ tabvar }}), ~ !is.na(.))) else df}() |>
-    tidytable::count.({{ tabvar }}) |>
+    tidytable::count.({{ tabvar }}, name = "n") |>
     tidytable::mutate.(prop = n/sum(n))
 }

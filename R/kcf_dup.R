@@ -5,7 +5,6 @@
 #' @param dupvar The variables to check for duplicates
 #' @return A data frame with counts per group, tag of whether duplicated, counter within group.
 #' @import tidytable
-#' @importFrom data.table :=
 #' @examples
 #' \dontrun{
 #' kcf_dup(mtcars, c(vs))
