@@ -20,3 +20,4 @@ kcf_tab <- function(data, tabvar, dropna = FALSE) {
     tidytable::mutate.(prop = n/sum(n))
 }
 
+.datatable.aware <- TRUE
