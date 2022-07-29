@@ -5,6 +5,7 @@
 #' @param tabvar The variables to tabulate.
 #' @return A data frame with tabulation of counts and proportions.
 #' @import tidytable
+#' @importFrom data.table :=
 #' @examples
 #' \dontrun{
 #' kcf_tab(mtcars, c(vs)) # one-way tabulate
