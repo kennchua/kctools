@@ -36,6 +36,7 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
                              names_to = c("stat", "varname"),
                              values_to = c("value")) |>
     tidytable::pivot_wider.(names_from = "stat", values_from = c("value")) |>
-    tidytable::relocate.(avg, sdv, nobs, nna, min, max, p05:p95, .after = varname)
+    tidytable::relocate.(avg, sdv, nobs,
+                         nna, min, max, p05:p95, .after = varname)
 }
 
