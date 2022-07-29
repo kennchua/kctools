@@ -18,3 +18,5 @@ kcf_tab <- function(data, tabvar, dropna = FALSE) {
     tidytable::count.({{ tabvar }}, name = "n") |>
     tidytable::mutate.(prop = n/sum(n))
 }
+
+.datatable.aware <- TRUE

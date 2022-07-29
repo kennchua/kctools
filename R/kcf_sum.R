@@ -40,3 +40,4 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
                          nna, min, max, p05:p95, .after = varname)
 }
 
+.datatable.aware <- TRUE
