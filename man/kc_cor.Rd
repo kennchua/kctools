@@ -7,9 +7,11 @@
 kc_cor(data, corvar, df = TRUE)
 }
 \arguments{
-\item{data}{The data frame to use.}
+\item{data}{The data frame to use}
 
-\item{corvar}{The variables to correlate.}
+\item{corvar}{The variables to correlate}
+
+\item{df}{If TRUE then returns output as data frame; if FALSE returns a matrix}
 }
 \value{
 Either a data frame or matrix of correlations.

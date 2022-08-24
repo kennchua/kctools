@@ -7,9 +7,11 @@
 kc_tab(data, tabvar, dropna = FALSE)
 }
 \arguments{
-\item{data}{The data frame to tabulate.}
+\item{data}{The data frame to tabulate}
 
-\item{tabvar}{The variables to tabulate.}
+\item{tabvar}{The variables to tabulate}
+
+\item{dropna}{If TRUE then drops NA values; if FALSE then includes NA values}
 }
 \value{
 A data frame with tabulation of counts and proportions.

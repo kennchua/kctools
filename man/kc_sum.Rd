@@ -7,11 +7,11 @@
 kc_sum(data, sumvar, byvar = NULL)
 }
 \arguments{
-\item{data}{The data frame to summarize.}
+\item{data}{The data frame to summarize}
 
-\item{sumvar}{The variables to summarize; accommodates tidyselect helpers.}
+\item{sumvar}{The variables to summarize; accommodates tidyselect helpers}
 
-\item{byvar}{The variables to group by. (optional)}
+\item{byvar}{The variables to group by (optional)}
 }
 \value{
 A data frame with descriptive stats: each var is a row; respective statistics are in column.
