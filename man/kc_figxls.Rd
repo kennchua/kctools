@@ -7,6 +7,8 @@
 kc_figxls(
   plotlist,
   sname = NULL,
+  width = 7.45,
+  height = 5.21,
   fpath = "~/Desktop/",
   fname = "KC_Plots.xlsx",
   overwrite = TRUE
@@ -16,6 +18,10 @@ kc_figxls(
 \item{plotlist}{List of plots to export}
 
 \item{sname}{Vector of names for sheet title}
+
+\item{width}{Width (in inches)}
+
+\item{height}{Height (in inches)}
 
 \item{fpath}{File path for output}
 
