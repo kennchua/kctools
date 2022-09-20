@@ -28,7 +28,7 @@ kc_regxls(
 
 \item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
 
-\item{note_lbl}{A note to append to the bottom of the table}
+\item{note_lbl}{A vector of notes to append to the bottom of the table}
 
 \item{fpath}{File path for output}
 
