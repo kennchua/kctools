@@ -15,6 +15,7 @@
 #' @import openxlsx
 #' @import purrr
 #' @import dplyr
+#' @import tibble
 
 kc_regxls <- function(reglist, sname = NULL,
                       coef_lbl = NULL, gof_lbl = NULL, rows_lbl = NULL, # gof_stat = NULL
@@ -83,7 +84,7 @@ kc_regxls <- function(reglist, sname = NULL,
                                       output = "data.frame") |>
     dplyr::select(-part, -statistic) |>
     dplyr::mutate(across(term, ~replace(., duplicated(.), NA))) |> # replace duplicate with NA
-    dplyr::bind_rows(dplyr::as_tibble_col(note_lbl, name = "term")) # append notes to table
+    dplyr::bind_rows(tibble::as_tibble_col(note_lbl, name = "term")) # append notes to table
     #dplyr::add_row(term = note_lbl)
 
   # Change name of df columns
