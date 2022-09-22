@@ -60,11 +60,11 @@ kc_regxls <- function(reglist, sname = NULL,
       }
     }
     if (is.null(rows_lbl)) {
-      rows_lbl <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
+      rows_lbl <- tibble::as_tibble(t(c("IV F-statistic", wald_vec)))
       names(rows_lbl) <- c("term", paste("Model", 1:length(reglist)))
 
     } else if (!is.null(rows_lbl)) {
-      rows_iv <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
+      rows_iv <- tibble::as_tibble(t(c("IV F-statistic", wald_vec)))
       names(rows_iv) <- c("term", paste("Model", 1:length(reglist)))
 
       rows_lbl <- dplyr::bind_rows(rows_iv, rows_lbl)
@@ -84,7 +84,7 @@ kc_regxls <- function(reglist, sname = NULL,
                                       output = "data.frame") |>
     dplyr::select(-part, -statistic) |>
     dplyr::mutate(across(term, ~replace(., duplicated(.), NA))) |> # replace duplicate with NA
-    dplyr::bind_rows(tibble::as_tibble_col(note_lbl, name = "term")) # append notes to table
+    dplyr::bind_rows(tibble::as_tibble_col(note_lbl, column_name = "term")) # append notes to table
     #dplyr::add_row(term = note_lbl)
 
   # Change name of df columns
