@@ -52,7 +52,7 @@ kc_regxls <- function(reglist,
     # Rename columns to either default or user-specified values
     {\(df) if (!is.null(cols_lbl)) purrr::set_names(df, cols_lbl)
       else purrr::set_names(df,
-                            c(" ", paste0("(", 1:(ncol(reg_df)-1), ")")))}()
+                            c(" ", paste0("(", 1:(ncol(df)-1), ")")))}()
 
 
   # Rename columns: default vs. user-provided
