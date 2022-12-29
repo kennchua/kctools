@@ -33,6 +33,8 @@ kc_regxls(
 
 \item{note_lbl}{A vector of table notes to append at the bottom of the table}
 
+\item{num_fmt}{Format of numeric values; using modelsummary's fmt argument}
+
 \item{fpath}{File path for output}
 
 \item{fname}{File name for output}

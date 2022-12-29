@@ -8,6 +8,7 @@
 #' @param rows_lbl Table rows to be appended
 #' @param cols_lbl A vector of column titles to appear on top row of table
 #' @param note_lbl A vector of table notes to append at the bottom of the table
+#' @param num_fmt Format of numeric values; using modelsummary's fmt argument
 #' @param fpath File path for output
 #' @param fname File name for output
 #' @param overwrite If TRUE then overwrites file; if FALSE then appends sheet on existing file
