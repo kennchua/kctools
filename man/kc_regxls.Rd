@@ -10,10 +10,11 @@ kc_regxls(
   coef_lbl = NULL,
   gof_lbl = NULL,
   rows_lbl = NULL,
+  cols_lbl = NULL,
   note_lbl = NULL,
+  num_fmt = "\%.3f",
   fpath = "~/Desktop/",
   fname = "kc_mod_all.xlsx",
-  ivwald = FALSE,
   overwrite = TRUE
 )
 }
@@ -26,15 +27,15 @@ kc_regxls(
 
 \item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
 
-\item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
+\item{rows_lbl}{Table rows to be appended}
 
-\item{note_lbl}{A vector of notes to append to the bottom of the table}
+\item{cols_lbl}{A vector of column titles to appear on top row of table}
+
+\item{note_lbl}{A vector of table notes to append at the bottom of the table}
 
 \item{fpath}{File path for output}
 
 \item{fname}{File name for output}
-
-\item{ivwald}{Report Kleibergen-Paap F-stat; using fixest's ivwald statistic}
 
 \item{overwrite}{If TRUE then overwrites file; if FALSE then appends sheet on existing file}
 }

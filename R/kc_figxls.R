@@ -31,7 +31,7 @@ kc_figxls <- function(plotlist, sname = NULL,
     # Insert plot to worksheet
     purrr::walk2(plotlist, sheetname,
                  function(x, y) {
-                   openxlsx::addWorksheet(wb_plot, toString(y), gridLines = FALSE)
+                   openxlsx::addWorksheet(wb_plot, toString(y), zoom = 125, gridLines = FALSE)
                    print(x)
                    openxlsx::insertPlot(wb_plot, toString(y), width = width, height = height, fileType = "png", units = "in")
                  })
@@ -54,7 +54,7 @@ kc_figxls <- function(plotlist, sname = NULL,
     # Insert plot to worksheet
     purrr::walk2(plotlist, sheetname,
                  function(x, y) {
-                   openxlsx::addWorksheet(wb_plot, toString(y), gridLines = FALSE)
+                   openxlsx::addWorksheet(wb_plot, toString(y), zoom = 125, gridLines = FALSE)
                    print(x)
                    openxlsx::insertPlot(wb_plot, toString(y), width = width, height = height, fileType = "png", units = "in")
                  })
