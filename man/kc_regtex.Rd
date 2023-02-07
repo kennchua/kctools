@@ -10,11 +10,11 @@ kc_regtex(
   coef_lbl = NULL,
   gof_lbl = NULL,
   rows_lbl = NULL,
+  mc_cores = NULL,
   fpath = "~/Desktop/",
   fname = "kc_mod_all.tex",
   fname_est = "kc_mod_est.tex",
-  fname_det = "kc_mod_det.tex",
-  ivwald = FALSE
+  fname_det = "kc_mod_det.tex"
 )
 }
 \arguments{
@@ -27,6 +27,8 @@ kc_regtex(
 \item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
 
 \item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
+
+\item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
 
 \item{fpath}{File path for output}
 

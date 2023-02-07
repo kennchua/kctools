@@ -6,6 +6,7 @@
 #' @param coef_lbl Model estimates to report; using modelsummary's coef_map argument
 #' @param gof_lbl Model diagnostics to report; using modelsummary's gof_map argument
 #' @param rows_lbl Additional rows to be included; using modelsummary's add_rows argument
+#' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
 #' @param fpath File path for output
 #' @param fname File name for output (both coefficients and diagnostics)
 #' @param fname_est File name for output (coefficient estimates only)
@@ -14,85 +15,50 @@
 #' @import stringr
 #' @import purrr
 
-kc_regtex <- function(reglist, sep = FALSE,
-                      coef_lbl = NULL, gof_lbl = NULL, rows_lbl = NULL, # gof_stat = NULL,
-                      fpath = "~/Desktop/", fname = "kc_mod_all.tex",
-                      fname_est = "kc_mod_est.tex", fname_det = "kc_mod_det.tex",
-                      ivwald = FALSE) {
+kc_regtex <- function(reglist,
+                      sep = FALSE, # output estimates separately from diagnotics
+                      coef_lbl = NULL,
+                      gof_lbl = NULL,
+                      rows_lbl = NULL,
+                      mc_cores = NULL,
+                      fpath = "~/Desktop/",
+                      fname = "kc_mod_all.tex",
+                      fname_est = "kc_mod_est.tex",
+                      fname_det = "kc_mod_det.tex") {
 
   # Numeric returned as plain rather than enclosed in \num{}
   options(modelsummary_format_numeric_latex = "plain")
 
 
-  # Add rows for IV F-stat if desired; add flexibility for lists with non-2sls output
-  # if ("ivwald" %in% gof_stat) {
+  # Add rows for IV F-stat if desired
+  # if (ivwald == TRUE) {
   #   wald_vec <- vector(mode = "character", length = length(reglist))
   #
   #   for (v in seq_along(reglist)) {
   #     if (class(reglist[[v]]) != "fixest") {
   #       wald_vec[[v]] = ""
   #     } else if (class(reglist[[v]]) == "fixest") {
-  #       if (is.na(fitstat(reglist[[v]], ~ ivwald1))) {
+  #       if (is.na(fixest::fitstat(reglist[[v]], ~ ivwald1))) {
   #         wald_vec[[v]] = ""
   #       } else {
   #         wald_vec[[v]] =
-  #           fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
+  #           fixest::fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
   #       }
   #     }
   #   }
   #
-  #   mod_iv =  paste(paste(c("IV F-stat", wald_vec),
-  #                         collapse = " & "),
-  #                   "\\\\\n", sep = "")
+  #   if (is.null(rows_lbl)) {
+  #     rows_lbl <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
+  #     names(rows_lbl) <- c("term", paste("Model", 1:length(reglist)))
   #
-  #   mod_det = paste(mod_det, mod_iv, sep = "")
+  #   } else if (!is.null(rows_lbl)) {
+  #     rows_iv <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
+  #     names(rows_iv) <- c("term", paste("Model", 1:length(reglist)))
   #
+  #     rows_lbl <- dplyr::bind_rows(rows_iv, rows_lbl)
+  #   }
   # }
 
-  # Add rows for IV F-stat if desired; add flexibility for lists with non-2sls output
-  if (ivwald == TRUE) {
-    wald_vec <- vector(mode = "character", length = length(reglist))
-
-    for (v in seq_along(reglist)) {
-      if (class(reglist[[v]]) != "fixest") {
-        wald_vec[[v]] = ""
-      } else if (class(reglist[[v]]) == "fixest") {
-        if (is.na(fixest::fitstat(reglist[[v]], ~ ivwald1))) {
-          wald_vec[[v]] = ""
-        } else {
-          wald_vec[[v]] =
-            fixest::fitstat(reglist[[v]], ~ ivwald1)$ivwald1$stat |> round(digits = 2)
-        }
-      }
-    }
-
-    if (is.null(rows_lbl)) {
-      rows_lbl <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
-      names(rows_lbl) <- c("term", paste("Model", 1:length(reglist)))
-
-    } else if (!is.null(rows_lbl)) {
-      rows_iv <- dplyr::as_tibble(t(c("IV F-statistic", wald_vec)))
-      names(rows_iv) <- c("term", paste("Model", 1:length(reglist)))
-
-      rows_lbl <- dplyr::bind_rows(rows_iv, rows_lbl)
-    }
-  }
-
-  # Set which gof statistics appear
-  # reg_gof <-
-  #   tibble::tribble(
-  #     ~raw,               ~clean,                        ~fmt,
-  #     "nobs",             "Observations",                  function(x) format(round(x, 3), big.mark=","),
-  #     "nclusters",        "Number of clusters",            function(x) format(round(x, 3), big.mark=","),
-  #     "r.squared",        "\\textit{R}-squared",           2,
-  #     "adj.r.squared",    "Adjusted \\textit{R}-squared",  2,
-  #     "pseudo.r.squared", "Pseudo \\textit{R}-squared",    2,
-  #     "rmse",             "RMSE",                          3,
-  #     "statistic.Weak.instrument", "IV F-stat",            1,
-  #     "p.value.Weak.instrument", "Weak IV p-value",        3,
-  #     "p.value.Wu.Hausman", "Wu-Hausman p-value",          3,
-  #     "p.value.Sargan",   "Sargan p-value",                3) |>
-  #   {\(df) if (!is.null(gof_stat)) filter(df, raw %in% gof_stat) else df}()
 
   # Generate modelsummary output (if variables are supplied)
   reg_tex = msummary(reglist,
@@ -101,6 +67,7 @@ kc_regtex <- function(reglist, sep = FALSE,
                      fmt = '%.3f',
                      gof_map = gof_lbl, #reg_gof,
                      add_rows = rows_lbl,
+                     mc.cores = mc_cores,
                      output = "latex_tabular")
 
   # Function to extract body of latex code

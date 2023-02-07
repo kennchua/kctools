@@ -12,6 +12,7 @@ kc_regxls(
   rows_lbl = NULL,
   cols_lbl = NULL,
   note_lbl = NULL,
+  mc_cores = NULL,
   num_fmt = "\%.3f",
   fpath = "~/Desktop/",
   fname = "kc_mod_all.xlsx",
@@ -27,11 +28,13 @@ kc_regxls(
 
 \item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
 
-\item{rows_lbl}{Table rows to be appended}
+\item{rows_lbl}{Data frame of rows to be appended}
 
-\item{cols_lbl}{A vector of column titles to appear on top row of table}
+\item{cols_lbl}{A vector of column titles to appear on the top row of the table}
 
 \item{note_lbl}{A vector of table notes to append at the bottom of the table}
+
+\item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
 
 \item{num_fmt}{Format of numeric values; using modelsummary's fmt argument}
 
@@ -42,5 +45,5 @@ kc_regxls(
 \item{overwrite}{If TRUE then overwrites file; if FALSE then appends sheet on existing file}
 }
 \description{
-Export a list of plots to individual sheets within an Excel file; depends on modelsummary, openxlsx, dplyr, and purrr.
+Export a list of regression output to a table within an Excel sheet; depends on modelsummary, openxlsx, dplyr, and purrr.
 }

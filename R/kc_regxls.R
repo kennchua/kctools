@@ -1,13 +1,14 @@
 #' Export regression output to Excel file
 #'
-#' Export a list of plots to individual sheets within an Excel file; depends on modelsummary, openxlsx, dplyr, and purrr.
+#' Export a list of regression output to a table within an Excel sheet; depends on modelsummary, openxlsx, dplyr, and purrr.
 #' @param reglist A list of regression output using base::lm() or fixest::feols()
 #' @param sname A string for the sheet title
 #' @param coef_lbl Model estimates to report; using modelsummary's coef_map argument
 #' @param gof_lbl Model diagnostics to report; using modelsummary's gof_map argument
-#' @param rows_lbl Table rows to be appended
-#' @param cols_lbl A vector of column titles to appear on top row of table
+#' @param rows_lbl Data frame of rows to be appended
+#' @param cols_lbl A vector of column titles to appear on the top row of the table
 #' @param note_lbl A vector of table notes to append at the bottom of the table
+#' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
 #' @param num_fmt Format of numeric values; using modelsummary's fmt argument
 #' @param fpath File path for output
 #' @param fname File name for output
@@ -25,6 +26,7 @@ kc_regxls <- function(reglist,
                       rows_lbl = NULL, # data frame of rows to be added
                       cols_lbl = NULL, # column header; default is numbers
                       note_lbl = NULL, # table notes to be added
+                      mc_cores = NULL, # parallel computation
                       num_fmt = '%.3f', # format of numbers
                       fpath = "~/Desktop/",
                       fname = "kc_mod_all.xlsx",
@@ -35,8 +37,9 @@ kc_regxls <- function(reglist,
   reg_df = modelsummary::msummary(reglist,
                                   stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
                                   coef_map = coef_lbl,
-                                  fmt = num_fmt,
                                   gof_map = gof_lbl,
+                                  mc.cores = mc_cores,
+                                  fmt = num_fmt,
                                   output = "data.frame") |>
     # Keep coefficient and standard error
     dplyr::select(-part, -statistic) |>
