@@ -26,7 +26,7 @@ kc_regxls <- function(reglist,
                       rows_lbl = NULL, # data frame of rows to be added
                       cols_lbl = NULL, # column header; default is numbers
                       note_lbl = NULL, # table notes to be added
-                      mc_cores = NULL, # parallel computation
+                      mc_cores = 1, # parallel computation
                       num_fmt = '%.3f', # format of numbers
                       fpath = "~/Desktop/",
                       fname = "kc_mod_all.xlsx",

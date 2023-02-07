@@ -10,7 +10,7 @@ kc_regtex(
   coef_lbl = NULL,
   gof_lbl = NULL,
   rows_lbl = NULL,
-  mc_cores = NULL,
+  mc_cores = 1,
   fpath = "~/Desktop/",
   fname = "kc_mod_all.tex",
   fname_est = "kc_mod_est.tex",

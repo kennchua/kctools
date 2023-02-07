@@ -12,7 +12,7 @@ kc_regxls(
   rows_lbl = NULL,
   cols_lbl = NULL,
   note_lbl = NULL,
-  mc_cores = NULL,
+  mc_cores = 1,
   num_fmt = "\%.3f",
   fpath = "~/Desktop/",
   fname = "kc_mod_all.xlsx",
