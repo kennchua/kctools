@@ -3,11 +3,11 @@
 #' Export a list of regression output to a table within an Excel sheet; depends on modelsummary, openxlsx, dplyr, and purrr.
 #' @param reglist A list of regression output using base::lm() or fixest::feols()
 #' @param sname A string for the sheet title
-#' @param coef_lbl Model estimates to report; using modelsummary's coef_map argument
-#' @param gof_lbl Model diagnostics to report; using modelsummary's gof_map argument
-#' @param rows_lbl Data frame of rows to be appended
+#' @param coef_map Model estimates to report; using modelsummary's coef_map argument
+#' @param gof_map Model diagnostics to report; using modelsummary's gof_map argument
+#' @param add_rows Data frame of rows to be appended
+#' @param add_notes A vector of table notes to append at the bottom of the table
 #' @param cols_lbl A vector of column titles to appear on the top row of the table
-#' @param note_lbl A vector of table notes to append at the bottom of the table
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
 #' @param num_fmt Format of numeric values; using modelsummary's fmt argument
 #' @param fpath File path for output
@@ -21,11 +21,11 @@
 
 kc_regxls <- function(reglist,
                       sname = NULL, # sheet name
-                      coef_lbl = NULL, # variable label
-                      gof_lbl = NULL,  # modelsummary diagnostics to report
-                      rows_lbl = NULL, # data frame of rows to be added
+                      coef_map = NULL, # variable label; formerly: coef_lbl
+                      gof_map = NULL,  # modelsummary diagnostics to report; formerly: gof_lbl
+                      add_rows = NULL, # data frame of rows to be added; formerly: rows_lbl
+                      add_notes = NULL, # table notes to be added; formerly note_lbl
                       cols_lbl = NULL, # column header; default is numbers
-                      note_lbl = NULL, # table notes to be added
                       mc_cores = 1, # parallel computation
                       num_fmt = '%.3f', # format of numbers
                       fpath = "~/Desktop/",
@@ -36,8 +36,8 @@ kc_regxls <- function(reglist,
   # Generate modelsummary output as data frame
   reg_df = modelsummary::msummary(reglist,
                                   stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
-                                  coef_map = coef_lbl,
-                                  gof_map = gof_lbl,
+                                  coef_map = coef_map,
+                                  gof_map = gof_map,
                                   mc.cores = mc_cores,
                                   fmt = num_fmt,
                                   output = "data.frame") |>
@@ -46,11 +46,11 @@ kc_regxls <- function(reglist,
     # Replace duplicated terms with NA
     dplyr::mutate(across(term, ~replace(., duplicated(.), NA))) |>
     # Append rows for table notes and diagnostics (if provided)
-    {\(df) if (is.null(rows_lbl)) df else df |>
-        rename_with(cols = everything(), ~ names(rows_lbl)) |> # rename columns
-        bind_rows(rows_lbl)}() |>
+    {\(df) if (is.null(add_rows)) df else df |>
+        rename_with(cols = everything(), ~ names(add_rows)) |> # rename columns
+        bind_rows(add_rows)}() |>
     # Append table notes to first column
-    {\(df) dplyr::bind_rows(df, tibble::as_tibble_col(note_lbl,
+    {\(df) dplyr::bind_rows(df, tibble::as_tibble_col(add_notes,
                                                       column_name = names(df)[[1]]))}() |>
     # Rename columns to either default or user-specified values
     {\(df) if (!is.null(cols_lbl)) purrr::set_names(df, cols_lbl)
@@ -85,7 +85,7 @@ kc_regxls <- function(reglist,
     addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
 
     addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"),
-             rows = nrow(reg_df)-length(note_lbl) + 1, cols = 1:ncol(reg_df))
+             rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
 
     # Center Alignment of Column Content
     openxlsx::addStyle(wb_regs, sheetname,
@@ -94,11 +94,6 @@ kc_regxls <- function(reglist,
 
     # Width of first column
     openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = 22)
-    # if (is.null(note_lbl)) {
-    #   openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = "auto")
-    # } else if (!is.null(note_lbl)) {
-    #   openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = 20)
-    # }
 
     openxlsx::saveWorkbook(wb_regs,  file = paste0(fpath, fname),
                            overwrite = TRUE)
@@ -123,7 +118,7 @@ kc_regxls <- function(reglist,
     addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
 
     addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"),
-             rows = nrow(reg_df)-length(note_lbl) + 1, cols = 1:ncol(reg_df))
+             rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
 
     # Center Alignment of Column Content
     openxlsx::addStyle(wb_regs, sheetname,
@@ -132,9 +127,9 @@ kc_regxls <- function(reglist,
 
     # Width of first column
     openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = 22)
-    # if (is.null(note_lbl)) {
+    # if (is.null(add_notes)) {
     #   openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = "auto")
-    # } else if (!is.null(note_lbl)) {
+    # } else if (!is.null(add_notes)) {
     #   openxlsx::setColWidths(wb_regs, sheetname, cols = 1, widths = 20)
     # }
 

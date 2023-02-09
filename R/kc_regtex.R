@@ -3,9 +3,9 @@
 #' Output regression table in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
 #' @param reglist A list of regression output using base::lm() or fixest::feols()
 #' @param sep Whether to output coefficient estimates separately from model diagnostics
-#' @param coef_lbl Model estimates to report; using modelsummary's coef_map argument
-#' @param gof_lbl Model diagnostics to report; using modelsummary's gof_map argument
-#' @param rows_lbl Additional rows to be included; using modelsummary's add_rows argument
+#' @param coef_map Model estimates to report; using modelsummary's coef_map argument
+#' @param gof_map Model diagnostics to report; using modelsummary's gof_map argument
+#' @param add_rows Additional rows to be included; using modelsummary's add_rows argument
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
 #' @param fpath File path for output
 #' @param fname File name for output (both coefficients and diagnostics)
@@ -17,9 +17,9 @@
 
 kc_regtex <- function(reglist,
                       sep = FALSE, # output estimates separately from diagnotics
-                      coef_lbl = NULL,
-                      gof_lbl = NULL,
-                      rows_lbl = NULL,
+                      coef_map = NULL,
+                      gof_map = NULL,
+                      add_rows = NULL,
                       mc_cores = 1,
                       fpath = "~/Desktop/",
                       fname = "kc_mod_all.tex",
@@ -63,10 +63,10 @@ kc_regtex <- function(reglist,
   # Generate modelsummary output (if variables are supplied)
   reg_tex = msummary(reglist,
                      stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
-                     coef_map = coef_lbl, #mod_xvar,
+                     coef_map = coef_map, #mod_xvar, coef_lbl
                      fmt = '%.3f',
-                     gof_map = gof_lbl, #reg_gof,
-                     add_rows = rows_lbl,
+                     gof_map = gof_map, #reg_gof, gof_lbl
+                     add_rows = add_rows, #rows_lbl
                      mc.cores = mc_cores,
                      output = "latex_tabular")
 

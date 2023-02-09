@@ -7,11 +7,11 @@
 kc_regxls(
   reglist,
   sname = NULL,
-  coef_lbl = NULL,
-  gof_lbl = NULL,
-  rows_lbl = NULL,
+  coef_map = NULL,
+  gof_map = NULL,
+  add_rows = NULL,
+  add_notes = NULL,
   cols_lbl = NULL,
-  note_lbl = NULL,
   mc_cores = 1,
   num_fmt = "\%.3f",
   fpath = "~/Desktop/",
@@ -24,15 +24,15 @@ kc_regxls(
 
 \item{sname}{A string for the sheet title}
 
-\item{coef_lbl}{Model estimates to report; using modelsummary's coef_map argument}
+\item{coef_map}{Model estimates to report; using modelsummary's coef_map argument}
 
-\item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
+\item{gof_map}{Model diagnostics to report; using modelsummary's gof_map argument}
 
-\item{rows_lbl}{Data frame of rows to be appended}
+\item{add_rows}{Data frame of rows to be appended}
+
+\item{add_notes}{A vector of table notes to append at the bottom of the table}
 
 \item{cols_lbl}{A vector of column titles to appear on the top row of the table}
-
-\item{note_lbl}{A vector of table notes to append at the bottom of the table}
 
 \item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
 

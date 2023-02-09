@@ -7,9 +7,9 @@
 kc_regtex(
   reglist,
   sep = FALSE,
-  coef_lbl = NULL,
-  gof_lbl = NULL,
-  rows_lbl = NULL,
+  coef_map = NULL,
+  gof_map = NULL,
+  add_rows = NULL,
   mc_cores = 1,
   fpath = "~/Desktop/",
   fname = "kc_mod_all.tex",
@@ -22,11 +22,11 @@ kc_regtex(
 
 \item{sep}{Whether to output coefficient estimates separately from model diagnostics}
 
-\item{coef_lbl}{Model estimates to report; using modelsummary's coef_map argument}
+\item{coef_map}{Model estimates to report; using modelsummary's coef_map argument}
 
-\item{gof_lbl}{Model diagnostics to report; using modelsummary's gof_map argument}
+\item{gof_map}{Model diagnostics to report; using modelsummary's gof_map argument}
 
-\item{rows_lbl}{Additional rows to be included; using modelsummary's add_rows argument}
+\item{add_rows}{Additional rows to be included; using modelsummary's add_rows argument}
 
 \item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
 
