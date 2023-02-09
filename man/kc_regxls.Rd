@@ -14,8 +14,8 @@ kc_regxls(
   cols_lbl = NULL,
   mc_cores = 1,
   num_fmt = "\%.3f",
-  fpath = "~/Desktop/",
-  fname = "kc_mod_all.xlsx",
+  fpath = NULL,
+  fname = "~/Desktop/kc_mod_all.xlsx",
   overwrite = TRUE
 )
 }
@@ -38,7 +38,7 @@ kc_regxls(
 
 \item{num_fmt}{Format of numeric values; using modelsummary's fmt argument}
 
-\item{fpath}{File path for output}
+\item{fpath}{File path for output; deprecated - use fname exclusively}
 
 \item{fname}{File name for output}
 

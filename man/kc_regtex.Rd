@@ -11,10 +11,10 @@ kc_regtex(
   gof_map = NULL,
   add_rows = NULL,
   mc_cores = 1,
-  fpath = "~/Desktop/",
-  fname = "kc_mod_all.tex",
-  fname_est = "kc_mod_est.tex",
-  fname_det = "kc_mod_det.tex"
+  fpath = NULL,
+  fname = "~/Desktop/kc_mod_all.tex",
+  fname_est = "~/Desktop/kc_mod_est.tex",
+  fname_det = "~/Desktop/kc_mod_det.tex"
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ kc_regtex(
 
 \item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
 
-\item{fpath}{File path for output}
+\item{fpath}{File path for output; deprecated - use fname* exclusively}
 
 \item{fname}{File name for output (both coefficients and diagnostics)}
 

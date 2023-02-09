@@ -7,7 +7,7 @@
 #' @param gof_map Model diagnostics to report; using modelsummary's gof_map argument
 #' @param add_rows Additional rows to be included; using modelsummary's add_rows argument
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
-#' @param fpath File path for output
+#' @param fpath File path for output; deprecated - use fname* exclusively
 #' @param fname File name for output (both coefficients and diagnostics)
 #' @param fname_est File name for output (coefficient estimates only)
 #' @param fname_det File name for output (model diagnostics only)
@@ -21,10 +21,10 @@ kc_regtex <- function(reglist,
                       gof_map = NULL,
                       add_rows = NULL,
                       mc_cores = 1,
-                      fpath = "~/Desktop/",
-                      fname = "kc_mod_all.tex",
-                      fname_est = "kc_mod_est.tex",
-                      fname_det = "kc_mod_det.tex") {
+                      fpath = NULL,
+                      fname = "~/Desktop/kc_mod_all.tex",
+                      fname_est = "~/Desktop/kc_mod_est.tex",
+                      fname_det = "~/Desktop/kc_mod_det.tex") {
 
   # Numeric returned as plain rather than enclosed in \num{}
   options(modelsummary_format_numeric_latex = "plain")

@@ -10,7 +10,7 @@
 #' @param cols_lbl A vector of column titles to appear on the top row of the table
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
 #' @param num_fmt Format of numeric values; using modelsummary's fmt argument
-#' @param fpath File path for output
+#' @param fpath File path for output; deprecated - use fname exclusively
 #' @param fname File name for output
 #' @param overwrite If TRUE then overwrites file; if FALSE then appends sheet on existing file
 #' @import modelsummary
@@ -21,15 +21,15 @@
 
 kc_regxls <- function(reglist,
                       sname = NULL, # sheet name
-                      coef_map = NULL, # variable label; formerly: coef_lbl
-                      gof_map = NULL,  # modelsummary diagnostics to report; formerly: gof_lbl
-                      add_rows = NULL, # data frame of rows to be added; formerly: rows_lbl
-                      add_notes = NULL, # table notes to be added; formerly note_lbl
+                      coef_map = NULL, # coefficients to display; formely coef_lbl
+                      gof_map = NULL,  # gof stats to display; formerly gof_lbl
+                      add_rows = NULL, # rows for diagnostics; formerly rows_lbl
+                      add_notes = NULL, # table notes; formerly note_lbl
                       cols_lbl = NULL, # column header; default is numbers
                       mc_cores = 1, # parallel computation
                       num_fmt = '%.3f', # format of numbers
-                      fpath = "~/Desktop/",
-                      fname = "kc_mod_all.xlsx",
+                      fpath = NULL,
+                      fname = "~/Desktop/kc_mod_all.xlsx",
                       overwrite = TRUE) {
 
 
