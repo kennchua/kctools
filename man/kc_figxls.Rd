@@ -9,8 +9,8 @@ kc_figxls(
   sname = NULL,
   width = 7.45,
   height = 5.21,
-  fpath = "~/Desktop/",
-  fname = "KC_Plots.xlsx",
+  fpath = NULL,
+  fname = "~/Desktop/KC_Plots.xlsx",
   overwrite = TRUE
 )
 }
@@ -23,7 +23,7 @@ kc_figxls(
 
 \item{height}{Height (in inches)}
 
-\item{fpath}{File path for output}
+\item{fpath}{File path for output; deprecated - use fname exclusively}
 
 \item{fname}{File name for output}
 

@@ -5,7 +5,7 @@
 #' @param sname Vector of names for sheet title
 #' @param width Width (in inches)
 #' @param height Height (in inches)
-#' @param fpath File path for output
+#' @param fpath File path for output; deprecated - use fname exclusively
 #' @param fname File name for output
 #' @param overwrite If TRUE then overwrites file; if FALSE then appends sheets on existing file
 #' @import openxlsx
@@ -13,7 +13,7 @@
 
 kc_figxls <- function(plotlist, sname = NULL,
                       width = 7.45, height = 5.21,
-                      fpath = "~/Desktop/", fname = "KC_Plots.xlsx",
+                      fpath = NULL, fname = "~/Desktop/KC_Plots.xlsx",
                       overwrite = TRUE) {
 
   if (overwrite == TRUE | (overwrite == FALSE & !file.exists(paste0(fpath, fname)))) {
