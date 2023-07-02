@@ -155,11 +155,11 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     dplyr::mutate(nonref_df = purrr::map(control_df,
                                   \(x) main_data |>
                                     dplyr::filter(.data[[grpvar]] %in% nonref) |>
-                                    tidyr::nest(.by = .data[[grpvar]]) |>
+                                    tidyr::nest(.by = all_of(grpvar)) |>
                                     dplyr::rename(treatment_df = data))) |>
     tidyr::unnest(c(nonref_df)) |>
     dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
-                                      \(d,g) d |> dplyr::mutate(!!sym(grpvar) := g))) |>
+                                      \(d,g) d |> dplyr::mutate(!!rlang::sym(grpvar) := g))) |>
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y))) |>
     dplyr::mutate(covar = purrr::map(contrast_df,
@@ -209,11 +209,11 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     dplyr::mutate(nonref_df = purrr::map(control_df,
                                   \(x) main_data |>
                                     dplyr::filter(.data[[grpvar]] %in% nonref) |>
-                                    tidyr::nest(.by = .data[[grpvar]]) |>
+                                    tidyr::nest(.by = all_of(grpvar)) |>
                                     dplyr::rename(treatment_df = data))) |>
     tidyr::unnest(c(nonref_df)) |>
     dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
-                                      \(d,g) d |> dplyr::mutate(!!sym(grpvar) := g))) |>
+                                      \(d,g) d |> dplyr::mutate(!!rlang::sym(grpvar) := g))) |>
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y) |>
                                        dplyr::mutate(dvar_grpvar = if_else(.data[[grpvar]] == refgrp, 0, 1)))) |>
