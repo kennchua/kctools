@@ -2,7 +2,7 @@
 % Please edit documentation in R/kc_baltab.R
 \name{kc_baltab}
 \alias{kc_baltab}
-\title{Create balance table with group means and standard deviations or standard error; conduct t-test and F-test}
+\title{Create balance table with group statistics; conduct t-tests and F-test}
 \usage{
 kc_baltab(
   data,
@@ -33,8 +33,8 @@ kc_baltab(
 \item{report_ttest_pval}{If TRUE then reports p-values in difference in means test; if FALSE then reports mean difference}
 }
 \value{
-A data frame with tabulation of counts and proportions.
+A data frame with group statistics as well as output from difference-in-means tests and F-test.
 }
 \description{
-Compute group means, standard deviations, as well as standard errors and conducts difference-in-means test with respect to reference group
+Computes group means, standard deviations, as well as standard errors; conducts difference-in-means test with respect to reference group; conduct joint significance test
 }
