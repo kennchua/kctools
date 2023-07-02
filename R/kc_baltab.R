@@ -1,6 +1,6 @@
 #' Create balance table with group statistics; conduct t-tests and F-test
 #'
-#' Computes group means, standard deviations, as well as standard errors; conducts difference-in-means test with respect to reference group; conduct joint significance test
+#' Create an export-ready data frame containing group means and group standard deviations (or standard errors), output from difference-in-means tests; as well as output from a joint significance test for models of group membership
 #' @param data The data frame to tabulate
 #' @param balvar The variables to tabulate
 #' @param grpvar If TRUE then drops NA values; if FALSE then includes NA values
@@ -9,7 +9,7 @@
 #' @param vcov Standard error type (e.g. "hc1", "iid", "hetero") or a name of a variable to cluster standard errors on
 #' @param report_sd If TRUE then reports standard deviation of each variable; if FALSE then reports standard errors
 #' @param report_ttest_pval If TRUE then reports p-values in difference in means test; if FALSE then reports mean difference
-#' @return A data frame with group statistics as well as output from difference-in-means tests and F-test.
+#' @return A data frame containing the balance table information
 #' @import dplyr
 #' @import tidyr
 #' @import stringr

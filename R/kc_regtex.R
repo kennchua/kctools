@@ -1,6 +1,6 @@
 #' Export regression table to LaTeX file
 #'
-#' Output regression table in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
+#' Export a list of regression output in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
 #' @param reglist A list of regression output using base::lm() or fixest::feols()
 #' @param sep Whether to output coefficient estimates separately from model diagnostics
 #' @param coef_map Model estimates to report; using modelsummary's coef_map argument

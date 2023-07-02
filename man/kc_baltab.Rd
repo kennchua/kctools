@@ -33,8 +33,8 @@ kc_baltab(
 \item{report_ttest_pval}{If TRUE then reports p-values in difference in means test; if FALSE then reports mean difference}
 }
 \value{
-A data frame with group statistics as well as output from difference-in-means tests and F-test.
+A data frame containing the balance table information
 }
 \description{
-Computes group means, standard deviations, as well as standard errors; conducts difference-in-means test with respect to reference group; conduct joint significance test
+Create an export-ready data frame containing group means and group standard deviations (or standard errors), output from difference-in-means tests; as well as output from a joint significance test for models of group membership
 }

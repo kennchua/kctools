@@ -42,5 +42,5 @@ kc_regtex(
 \item{fname_det}{File name for output (model diagnostics only)}
 }
 \description{
-Output regression table in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
+Export a list of regression output in tex format with options to separate model estimates from diagnostics; depends on modelsummary, stringr, and purrr.
 }
