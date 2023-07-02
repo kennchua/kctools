@@ -133,7 +133,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       tidyr::pivot_wider(names_from = grpvar, values_from= "value") |>
       # Arrange Mutate num obs format
       tidyr::separate(name, into = c("vars", "stat"), sep="_(?=[^_]+$)") |>
-      dplyr::mutate(vars = str_remove(vars, "lhs: ")) |>
+      dplyr::mutate(vars = stringr::str_remove(vars, "lhs: ")) |>
       dplyr::mutate(vars_fct = factor(vars, levels = balvar)) |>
       dplyr::mutate(stat_fct = factor(stat, levels = c("mean", "serr", "nobs"))) |>
       dplyr::arrange(vars_fct, stat_fct) |>
