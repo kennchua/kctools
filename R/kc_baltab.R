@@ -227,7 +227,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     dplyr::mutate(ftest_stat = purrr::map2(reg_ftest, .data[[grpvar]],
                                     \(res, g) fixest::fitstat(res, type = c("f.stat", "f.p"),
                                                               simplify = TRUE) |>
-                                      as_tibble() |>
+                                      dplyr::as_tibble() |>
                                       dplyr::mutate(dplyr::across(everything(), ~sprintf("%.3f", round(., digits = 3)))) |>
                                       tidyr::pivot_longer(cols = everything(),
                                                           names_to = "vars_fct",
