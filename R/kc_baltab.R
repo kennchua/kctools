@@ -13,6 +13,7 @@
 #' @import dplyr
 #' @import tidyr
 #' @import stringr
+#' @import purrr
 #' @import fixest
 #' @import modelsummary
 
@@ -103,21 +104,21 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       dplyr::group_by(dplyr::across({{grpvar}})) |>
       tidyr::nest() |>
       # Specify variables to get mean and SE
-      dplyr::mutate(covar = map2(data, .data[[grpvar]],
-                                 \(d, g) map(balvar, \(y) y))) |>
+      dplyr::mutate(covar = purrr::map2(data, .data[[grpvar]],
+                                 \(d, g)  purrr::map(balvar, \(y) y))) |>
       # Run regressions to get mean and SE
-      dplyr::mutate(reg_mean_se = map2(data, covar,
+      dplyr::mutate(reg_mean_se =  purrr::map2(data, covar,
                                        \(d, y) fixest::feols(.[y] ~ 1,
                                                              fixef = NULL,
                                                              data = d,
                                                              vcov = vcov_type))) |>
       # Get data frame with mean, se, and nobs using modelsummary
-      dplyr::mutate(mean_se_nobs = map(reg_mean_se,
+      dplyr::mutate(mean_se_nobs = purrr::map(reg_mean_se,
                                        \(res) modelsummary::msummary(res,
                                                                      output = "data.frame",
                                                                      gof_map = gm))) |>
       # Rename objects
-      dplyr::mutate(mean_se_nobs = map(mean_se_nobs,
+      dplyr::mutate(mean_se_nobs = purrr::map(mean_se_nobs,
                                        \(d) d |>
                                          dplyr::mutate(reg_stats = dplyr::case_when(part == "estimates" & statistic == "estimate" ~ "mean",
                                                                                     part == "estimates" & statistic == "std.error" ~ "serr",
@@ -151,26 +152,26 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     dplyr::filter(.data[[grpvar]] == refgrp) |>
     tidyr::nest() |>
     dplyr::rename(control_df = data) |>
-    dplyr::mutate(nonref_df = map(control_df,
+    dplyr::mutate(nonref_df = purrr::map(control_df,
                                   \(x) main_data |>
                                     dplyr::filter(.data[[grpvar]] %in% nonref) |>
                                     tidyr::nest(.by = .data[[grpvar]]) |>
                                     dplyr::rename(treatment_df = data))) |>
     unnest(c(nonref_df)) |>
-    dplyr::mutate(treatment_df = map2(treatment_df, .data[[grpvar]],
+    dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
                                       \(d,g) d |> dplyr::mutate(!!sym(grpvar) := g))) |>
-    dplyr::mutate(contrast_df = map2(control_df, treatment_df,
+    dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y))) |>
-    dplyr::mutate(covar = map(contrast_df,
-                              \(d) map(balvar, \(y) y))) |>
+    dplyr::mutate(covar = purrr::map(contrast_df,
+                              \(d) purrr::map(balvar, \(y) y))) |>
     # Run regressions to get difference in means (reg y D)
-    dplyr::mutate(reg_diff_mean = map2(contrast_df, covar,
+    dplyr::mutate(reg_diff_mean = purrr::map2(contrast_df, covar,
                                        \(d, y) fixest::feols(.[y] ~ i(.[grpvar], ref = refgrp),
                                                              fixef = fevar,
                                                              data = d,
                                                              vcov = vcov_type))) |>
     # Get data frame with mean, se, and nobs using modelsummary
-    dplyr::mutate(diff_mean_list = map(reg_diff_mean,
+    dplyr::mutate(diff_mean_list = purrr::map(reg_diff_mean,
                                        \(res) modelsummary::msummary(res,
                                                                      output = "data.frame",
                                                                      stars =  c('*' = .1, '**' = .05, '***' = 0.01),
@@ -180,7 +181,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                                                      statistic = "{p.value}{stars}"
                                        ))) |>
     # Clean up data frame
-    mutate(diff_mean_list = pmap(list(reg_diff_mean, diff_mean_list, .data[[grpvar]]),
+    mutate(diff_mean_list = purrr::pmap(list(reg_diff_mean, diff_mean_list, .data[[grpvar]]),
                                  \(res, d, g) d |>
                                    {\(df) if (class(res) == "fixest")
                                      dplyr::mutate(df, model = balvar)
@@ -199,31 +200,31 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     ))
 
 
-  ttest_df <- reduce(ttest$diff_mean_list, left_join, by = "vars_fct")
+  ttest_df <- purrr::reduce(ttest$diff_mean_list, left_join, by = "vars_fct")
 
   ftest <- main_data |>
     dplyr::filter(.data[[grpvar]] == refgrp) |>
     tidyr::nest() |>
     dplyr::rename(control_df = data) |>
-    dplyr::mutate(nonref_df = map(control_df,
+    dplyr::mutate(nonref_df = purrr::map(control_df,
                                   \(x) main_data |>
                                     dplyr::filter(.data[[grpvar]] %in% nonref) |>
                                     tidyr::nest(.by = .data[[grpvar]]) |>
                                     dplyr::rename(treatment_df = data))) |>
     tidyr::unnest(c(nonref_df)) |>
-    dplyr::mutate(treatment_df = map2(treatment_df, .data[[grpvar]],
+    dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
                                       \(d,g) d |> mutate(!!sym(grpvar) := g))) |>
-    dplyr::mutate(contrast_df = map2(control_df, treatment_df,
+    dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y) |>
                                        dplyr::mutate(dvar_grpvar = if_else(.data[[grpvar]] == refgrp, 0, 1)))) |>
     # Regression
-    dplyr::mutate(reg_ftest = map(contrast_df,
+    dplyr::mutate(reg_ftest = purrr::map(contrast_df,
                                   \(d, y) fixest::feols(dvar_grpvar ~ .[balvar],
                                                         fixef = fevar,
                                                         data = d,
                                                         vcov = vcov_type))) |>
     # F-test
-    dplyr::mutate(ftest_stat = map2(reg_ftest, .data[[grpvar]],
+    dplyr::mutate(ftest_stat = purrr::map2(reg_ftest, .data[[grpvar]],
                                     \(res, g) fixest::fitstat(res, type = c("f.stat", "f.p"),
                                                               simplify = TRUE) |>
                                       as_tibble() |>
@@ -232,7 +233,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                                           names_to = "vars_fct",
                                                           values_to = paste0(g, " vs. ", refgrp))))
 
-  ftest_df <- reduce(ftest$ftest_stat, dplyr::left_join, by = "vars_fct")
+  ftest_df <- purrr::reduce(ftest$ftest_stat, dplyr::left_join, by = "vars_fct")
 
   if (report_sd == TRUE) {
     report_df <- dplyr::full_join(mean_sd, ttest_df, by = "vars_fct") |>
