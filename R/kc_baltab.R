@@ -216,7 +216,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                       \(d,g) d |> dplyr::mutate(!!rlang::sym(grpvar) := g))) |>
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y) |>
-                                       dplyr::mutate(dvar_grpvar = ifelse(.data[[grpvar]] == refgrp, 0, 1)))) |>
+                                       dplyr::mutate(dvar_grpvar = dplyr::if_else(.data[[grpvar]] == refgrp, 0, 1)))) |>
     # Regression
     dplyr::mutate(reg_ftest = purrr::map(contrast_df,
                                   \(d, y) fixest::feols(dvar_grpvar ~ .[balvar],
