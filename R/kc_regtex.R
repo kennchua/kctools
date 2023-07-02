@@ -7,6 +7,7 @@
 #' @param gof_map Model diagnostics to report; using modelsummary's gof_map argument
 #' @param add_rows Additional rows to be included; using modelsummary's add_rows argument
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
+#' @param num_fmt Format of numeric values; using modelsummary's fmt argument
 #' @param fpath File path for output; deprecated - use fname* exclusively
 #' @param fname File name for output (both coefficients and diagnostics)
 #' @param fname_est File name for output (coefficient estimates only)
@@ -21,6 +22,7 @@ kc_regtex <- function(reglist,
                       gof_map = NULL,
                       add_rows = NULL,
                       mc_cores = 1,
+                      num_fmt = '%.3f', # format of numbers
                       fpath = NULL,
                       fname = "~/Desktop/kc_mod_all.tex",
                       fname_est = "~/Desktop/kc_mod_est.tex",
@@ -64,7 +66,7 @@ kc_regtex <- function(reglist,
   reg_tex = msummary(reglist,
                      stars = c("*" = 0.1, "**" = .05, "***" = 0.01),
                      coef_map = coef_map, #mod_xvar, coef_lbl
-                     fmt = '%.3f',
+                     fmt = num_fmt,
                      gof_map = gof_map, #reg_gof, gof_lbl
                      add_rows = add_rows, #rows_lbl
                      mc.cores = mc_cores,

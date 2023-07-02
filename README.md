@@ -38,4 +38,7 @@ library(kctools)
 # kc_regtex(): Ouput list of regression results in tex file
 # kc_regxls(): Output list of regression results to Excel sheet 
 # kc_figxls(): Output list of figures to Excel sheets
+
+# Others:
+# kc_baltab(): create balance table with group means and sd as well as difference-in-means test and F-test
 ```

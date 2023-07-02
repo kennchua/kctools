@@ -28,7 +28,7 @@ kc_regxls(
 
 \item{gof_map}{Model diagnostics to report; using modelsummary's gof_map argument}
 
-\item{add_rows}{Data frame of rows to be appended}
+\item{add_rows}{Data frame of rows to be appended; using modelsummary's add_rows argument}
 
 \item{add_notes}{A vector of table notes to append at the bottom of the table}
 

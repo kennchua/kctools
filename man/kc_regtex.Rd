@@ -11,6 +11,7 @@ kc_regtex(
   gof_map = NULL,
   add_rows = NULL,
   mc_cores = 1,
+  num_fmt = "\%.3f",
   fpath = NULL,
   fname = "~/Desktop/kc_mod_all.tex",
   fname_est = "~/Desktop/kc_mod_est.tex",
@@ -29,6 +30,8 @@ kc_regtex(
 \item{add_rows}{Additional rows to be included; using modelsummary's add_rows argument}
 
 \item{mc_cores}{Parallel computation of model diagnostics; using modelsummary's mc.cores argument}
+
+\item{num_fmt}{Format of numeric values; using modelsummary's fmt argument}
 
 \item{fpath}{File path for output; deprecated - use fname* exclusively}
 

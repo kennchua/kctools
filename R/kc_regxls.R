@@ -5,7 +5,7 @@
 #' @param sname A string for the sheet title
 #' @param coef_map Model estimates to report; using modelsummary's coef_map argument
 #' @param gof_map Model diagnostics to report; using modelsummary's gof_map argument
-#' @param add_rows Data frame of rows to be appended
+#' @param add_rows Data frame of rows to be appended; using modelsummary's add_rows argument
 #' @param add_notes A vector of table notes to append at the bottom of the table
 #' @param cols_lbl A vector of column titles to appear on the top row of the table
 #' @param mc_cores Parallel computation of model diagnostics; using modelsummary's mc.cores argument
@@ -81,11 +81,11 @@ kc_regxls <- function(reglist,
 
 
     # Borders of Column Title, Table Body
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Top"), rows = 1, cols = 1:ncol(reg_df))
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
+    openxlsx::addStyle(wb_regs, sheetname, style = createStyle(border = "Top"), rows = 1, cols = 1:ncol(reg_df))
+    openxlsx::addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
 
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"),
-             rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
+    openxlsx::addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"),
+                       rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
 
     # Center Alignment of Column Content
     openxlsx::addStyle(wb_regs, sheetname,
@@ -114,11 +114,11 @@ kc_regxls <- function(reglist,
     openxlsx::writeData(wb_regs, sheetname, reg_df, startRow = 1, startCol = 1)
 
     # Borders of Column Title, Table Body
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Top"), rows = 1, cols = 1:ncol(reg_df))
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
+    openxlsx::addStyle(wb_regs, sheetname, style = openxlsx::createStyle(border = "Top"), rows = 1, cols = 1:ncol(reg_df))
+    openxlsx::addStyle(wb_regs, sheetname, style = openxlsx::createStyle(border = "Bottom"), rows = 1, cols = 1:ncol(reg_df), stack = TRUE)
 
-    addStyle(wb_regs, sheetname, style = createStyle(border = "Bottom"),
-             rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
+    openxlsx::addStyle(wb_regs, sheetname, style = openxlsx::createStyle(border = "Bottom"),
+                       rows = nrow(reg_df)-length(add_notes) + 1, cols = 1:ncol(reg_df))
 
     # Center Alignment of Column Content
     openxlsx::addStyle(wb_regs, sheetname,
