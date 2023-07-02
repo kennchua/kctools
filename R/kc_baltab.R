@@ -213,7 +213,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                     dplyr::rename(treatment_df = data))) |>
     tidyr::unnest(c(nonref_df)) |>
     dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
-                                      \(d,g) d |> mutate(!!sym(grpvar) := g))) |>
+                                      \(d,g) d |> dplyr::mutate(!!sym(grpvar) := g))) |>
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y) |>
                                        dplyr::mutate(dvar_grpvar = if_else(.data[[grpvar]] == refgrp, 0, 1)))) |>
