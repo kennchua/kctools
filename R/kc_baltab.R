@@ -180,7 +180,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                                                      statistic = "{p.value}{stars}"
                                        ))) |>
     # Clean up data frame
-    mutate(diff_mean_list = pmap(list(reg_diff_mean, diff_mean_list, treatment),
+    mutate(diff_mean_list = pmap(list(reg_diff_mean, diff_mean_list, .data[[grpvar]]),
                                  \(res, d, g) d |>
                                    {\(df) if (class(res) == "fixest")
                                      dplyr::mutate(df, model = balvar)
