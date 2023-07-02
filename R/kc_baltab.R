@@ -157,7 +157,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                     dplyr::filter(.data[[grpvar]] %in% nonref) |>
                                     tidyr::nest(.by = .data[[grpvar]]) |>
                                     dplyr::rename(treatment_df = data))) |>
-    unnest(c(nonref_df)) |>
+    tidyr::unnest(c(nonref_df)) |>
     dplyr::mutate(treatment_df = purrr::map2(treatment_df, .data[[grpvar]],
                                       \(d,g) d |> dplyr::mutate(!!sym(grpvar) := g))) |>
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
@@ -181,26 +181,26 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                                                      statistic = "{p.value}{stars}"
                                        ))) |>
     # Clean up data frame
-    mutate(diff_mean_list = purrr::pmap(list(reg_diff_mean, diff_mean_list, .data[[grpvar]]),
-                                 \(res, d, g) d |>
-                                   {\(df) if (class(res) == "fixest")
-                                     dplyr::mutate(df, model = balvar)
-                                     else if (class(res) == "fixest_multi")
-                                       dplyr::mutate(df, model =  stringr::str_remove(model, "lhs: "))}() |>
-                                   dplyr::select(-part, -term,
-                                                 vars = model, diff_mean = "Est.",
-                                                 diff_mean_pval = p) |>
-                                   dplyr::mutate(vars_fct = factor(vars, levels = balvar)) |>
-                                   dplyr::arrange(vars_fct)|>
-                                   {\(df) if (report_ttest_pval == TRUE) dplyr::select(df, -diff_mean, -vars) |>
-                                       dplyr::rename_with(~ paste0(g, " vs. ", refgrp), diff_mean_pval)
-                                     else dplyr::select(df, -diff_mean_pval, -vars) |>
-                                       dplyr::rename_with(~ paste0(g, " vs. ", refgrp), diff_mean)}() |>
-                                   dplyr::select(vars_fct, everything())
+    dplyr::mutate(diff_mean_list = purrr::pmap(list(reg_diff_mean, diff_mean_list, .data[[grpvar]]),
+                                               \(res, d, g) d |>
+                                                 {\(df) if (class(res) == "fixest")
+                                                   dplyr::mutate(df, model = balvar)
+                                                   else if (class(res) == "fixest_multi")
+                                                     dplyr::mutate(df, model =  stringr::str_remove(model, "lhs: "))}() |>
+                                                 dplyr::select(-part, -term,
+                                                               vars = model, diff_mean = "Est.",
+                                                               diff_mean_pval = p) |>
+                                                 dplyr::mutate(vars_fct = factor(vars, levels = balvar)) |>
+                                                 dplyr::arrange(vars_fct)|>
+                                                 {\(df) if (report_ttest_pval == TRUE) dplyr::select(df, -diff_mean, -vars) |>
+                                                     dplyr::rename_with(~ paste0(g, " vs. ", refgrp), diff_mean_pval)
+                                                   else dplyr::select(df, -diff_mean_pval, -vars) |>
+                                                     dplyr::rename_with(~ paste0(g, " vs. ", refgrp), diff_mean)}() |>
+                                                 dplyr::select(vars_fct, everything())
     ))
 
 
-  ttest_df <- purrr::reduce(ttest$diff_mean_list, left_join, by = "vars_fct")
+  ttest_df <- purrr::reduce(ttest$diff_mean_list, dplyr::left_join, by = "vars_fct")
 
   ftest <- main_data |>
     dplyr::filter(.data[[grpvar]] == refgrp) |>
