@@ -32,7 +32,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
   if (!grpvar %in% (names(data)))
     stop("Group variable must be in data.")
 
-  if (!refgrp %in% (data |> pull({{grpvar}}) |> unique()))
+  if (!refgrp %in% (data |> dplyr::pull({{grpvar}}) |> unique()))
     stop("Reference group must be in group variable.")
 
   # Note on FE:
@@ -88,9 +88,9 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       dplyr::mutate(stat_fct = factor(stat, levels = c("mean", "sdev", "nobs"))) |>
       dplyr::arrange(vars_fct, stat_fct) |>
       dplyr::select(vars_fct, stat_fct, all_of(grpvar_fct)) |>
-      dplyr::mutate(across(all_of(grpvar_fct), ~ case_when(stat_fct == "mean" ~ sprintf("%.3f", round(., digits = 3)),
-                                                           stat_fct == "sdev" ~ paste0("(", sprintf("%.3f", round(., digits = 3)), ")"),
-                                                           stat_fct == "nobs" ~ paste0("[",  format(as.integer(.), big.mark = ","), "]")))) |>
+      dplyr::mutate(dplyr::across(all_of(grpvar_fct), ~ dplyr::case_when(stat_fct == "mean" ~ sprintf("%.3f", round(., digits = 3)),
+                                                                         stat_fct == "sdev" ~ paste0("(", sprintf("%.3f", round(., digits = 3)), ")"),
+                                                                         stat_fct == "nobs" ~ paste0("[",  format(as.integer(.), big.mark = ","), "]")))) |>
       dplyr::select(-stat_fct) |>
       # Replace duplicates with NA
       dplyr::mutate(vars_fct = replace(vars_fct, duplicated(vars_fct), NA))
@@ -100,7 +100,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
   } else if (report_sd == FALSE) {
     # Compute mean, SE, nobs
     mean_se <- main_data |>
-      dplyr::group_by(across({{grpvar}})) |>
+      dplyr::group_by(dplyr::across({{grpvar}})) |>
       tidyr::nest() |>
       # Specify variables to get mean and SE
       dplyr::mutate(covar = map2(data, .data[[grpvar]],
@@ -119,9 +119,9 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       # Rename objects
       dplyr::mutate(mean_se_nobs = map(mean_se_nobs,
                                        \(d) d |>
-                                         dplyr::mutate(reg_stats = case_when(part == "estimates" & statistic == "estimate" ~ "mean",
-                                                                             part == "estimates" & statistic == "std.error" ~ "serr",
-                                                                             part == "gof" & statistic == "" ~ "nobs")) |>
+                                         dplyr::mutate(reg_stats = dplyr::case_when(part == "estimates" & statistic == "estimate" ~ "mean",
+                                                                                    part == "estimates" & statistic == "std.error" ~ "serr",
+                                                                                    part == "gof" & statistic == "" ~ "nobs")) |>
                                          dplyr::select(reg_stats, starts_with("lhs")))) |>
       # Keep only objects
       dplyr::select({{grpvar}}, mean_se_nobs) |>
@@ -137,9 +137,9 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       dplyr::mutate(stat_fct = factor(stat, levels = c("mean", "serr", "nobs"))) |>
       dplyr::arrange(vars_fct, stat_fct) |>
       dplyr::select(vars_fct, stat_fct, all_of(grpvar_fct)) |>
-      dplyr::mutate(across(all_of(grpvar_fct), ~ case_when(stat_fct == "nobs" ~ paste0("[",  ., "]"),
-                                                           stat_fct == "serr" ~ .,
-                                                           stat_fct == "mean" ~ .))) |>
+      dplyr::mutate(dplyr::across(all_of(grpvar_fct), ~ dplyr::case_when(stat_fct == "nobs" ~ paste0("[",  ., "]"),
+                                                                         stat_fct == "serr" ~ .,
+                                                                         stat_fct == "mean" ~ .))) |>
       dplyr::select(-stat_fct) |>
       # Replace duplicates with NA
       dplyr::mutate(vars_fct = replace(vars_fct, duplicated(vars_fct), NA))
@@ -227,7 +227,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                     \(res, g) fixest::fitstat(res, type = c("f.stat", "f.p"),
                                                               simplify = TRUE) |>
                                       as_tibble() |>
-                                      dplyr::mutate(across(everything(), ~sprintf("%.3f", round(., digits = 3)))) |>
+                                      dplyr::mutate(dplyr::across(everything(), ~sprintf("%.3f", round(., digits = 3)))) |>
                                       tidyr::pivot_longer(cols = everything(),
                                                           names_to = "vars_fct",
                                                           values_to = paste0(g, " vs. ", refgrp))))
