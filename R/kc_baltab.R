@@ -16,6 +16,7 @@
 #' @import purrr
 #' @import fixest
 #' @import modelsummary
+#' @import marginaleffects
 
 
 
@@ -24,6 +25,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                       fevar = NULL, vcov = "hc1",
                       report_sd = FALSE, report_ttest_pval = TRUE) {
 
+  # Preliminaries
   if (!is.data.frame(data))
     stop("Data must be a data frame.")
 
@@ -36,12 +38,11 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
   if (!refgrp %in% (data |> dplyr::pull({{grpvar}}) |> unique()))
     stop("Reference group must be in group variable.")
 
-  # Note on FE:
   if (!is.null(fevar))
     if(!fevar %in% (names(data)))
       stop("Fixed effects must be in data.")
 
-  # Note on SE:
+  # SE can be either fixest types below or a variable name to cluster on
   if (vcov %in% c("iid", "normal", "standard", "hetero", "white", "hc1")) {
     vcov_type = vcov
   } else if (! vcov %in% c("iid", "normal", "standard", "hetero", "white", "hc1") &
@@ -52,16 +53,18 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     stop("SE type must be a variable in data or a recognized type.")
   }
 
-  # Drop NA group category
+  # Drop obs with NA group/treatment category
   main_data <- data |>
     tidyr::drop_na(grpvar)
 
+  # grpvar as factor
   grpvar_fct <- main_data |>
     dplyr::pull(grpvar) |>
     unique() |>
     sort() |>
     factor()
 
+  # Define non-reference categories
   nonref <- setdiff(main_data |> dplyr::pull({{grpvar}}) |> unique(),
                     refgrp)
 
@@ -71,7 +74,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
   )
 
 
-  # Compute mean / sd or mean / se
+  # Compute mean / sd OR mean / se
   if (report_sd == TRUE) {
     mean_sd <- main_data |>
       dplyr::group_by(dplyr::across({{grpvar}})) |>
@@ -97,7 +100,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       dplyr::mutate(vars_fct = replace(vars_fct, duplicated(vars_fct), NA))
 
 
-    #return(mean_sd)
+
   } else if (report_sd == FALSE) {
     # Compute mean, SE, nobs
     mean_se <- main_data |>
@@ -147,7 +150,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
 
   }
 
-
+  # Difference in mean test as regressions
   ttest <- main_data |>
     dplyr::filter(.data[[grpvar]] == refgrp) |>
     tidyr::nest() |>
@@ -202,6 +205,7 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
 
   ttest_df <- purrr::reduce(ttest$diff_mean_list, dplyr::left_join, by = "vars_fct")
 
+  # F-test of joint significance
   ftest <- main_data |>
     dplyr::filter(.data[[grpvar]] == refgrp) |>
     tidyr::nest() |>
@@ -217,17 +221,19 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
     dplyr::mutate(contrast_df = purrr::map2(control_df, treatment_df,
                                      \(x, y) dplyr::bind_rows(x, y) |>
                                        dplyr::mutate(dvar_grpvar = dplyr::if_else(.data[[grpvar]] == refgrp, 0, 1)))) |>
-    # Regression
+    # Regression of grpvar on covariates
     dplyr::mutate(reg_ftest = purrr::map(contrast_df,
                                   \(d, y) fixest::feols(dvar_grpvar ~ .[balvar],
                                                         fixef = fevar,
                                                         data = d,
                                                         vcov = vcov_type))) |>
-    # F-test
+    # F-test for grpvar status
     dplyr::mutate(ftest_stat = purrr::map2(reg_ftest, .data[[grpvar]],
-                                    \(res, g) fixest::fitstat(res, type = c("f.stat", "f.p"),
-                                                              simplify = TRUE) |>
+                                    # \(res, g) fixest::fitstat(res, type = c("f.stat", "f.p"),
+                                    #                           simplify = TRUE) |>
+                                    \(res, g) marginaleffects::hypotheses(res, joint = balvar) |>
                                       dplyr::as_tibble() |>
+                                      dplyr::select(f.stat = statistic, f.p = p.value) |>
                                       dplyr::mutate(dplyr::across(everything(), ~sprintf("%.3f", round(., digits = 3)))) |>
                                       tidyr::pivot_longer(cols = everything(),
                                                           names_to = "vars_fct",
