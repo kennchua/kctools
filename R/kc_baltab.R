@@ -70,7 +70,9 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
 
   # Setup
   gm <- list(
-    list("raw" = "nobs", "clean" = "nobs", "fmt" = function(x) format(round(x, 3), big.mark=","))
+    list("raw" = "nobs",
+         "clean" = "nobs",
+         "fmt" = function(x) formatC(x, digits = 3, big.mark = ",", format = "f"))
   )
 
 
@@ -92,9 +94,10 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
       dplyr::mutate(stat_fct = factor(stat, levels = c("mean", "sdev", "nobs"))) |>
       dplyr::arrange(vars_fct, stat_fct) |>
       dplyr::select(vars_fct, stat_fct, all_of(grpvar_fct)) |>
-      dplyr::mutate(dplyr::across(all_of(grpvar_fct), ~ dplyr::case_when(stat_fct == "mean" ~ sprintf("%.3f", round(., digits = 3)),
-                                                                         stat_fct == "sdev" ~ paste0("(", sprintf("%.3f", round(., digits = 3)), ")"),
-                                                                         stat_fct == "nobs" ~ paste0("[",  format(as.integer(.), big.mark = ","), "]")))) |>
+      dplyr::mutate(dplyr::across(all_of(grpvar_fct),
+                                  ~ dplyr::case_when(stat_fct == "mean" ~ formatC(., digits = 3, big.mark = ",", format = "f")), #sprintf("%.3f", round(., digits = 3)),
+                                                     stat_fct == "sdev" ~ paste0("(", formatC(., digits = 3, big.mark = ",", format = "f"), ")"), # paste0("(", sprintf("%.3f", round(., digits = 3)), ")"),
+                                                     stat_fct == "nobs" ~ paste0("[",  format(as.integer(.), big.mark = ","), "]"))) |>
       dplyr::select(-stat_fct) |>
       # Replace duplicates with NA
       dplyr::mutate(vars_fct = replace(vars_fct, duplicated(vars_fct), NA))
@@ -234,7 +237,8 @@ kc_baltab <- function(data, balvar, grpvar, refgrp,
                                     \(res, g) marginaleffects::hypotheses(res, joint = balvar) |>
                                       dplyr::as_tibble() |>
                                       dplyr::select(f.stat = statistic, f.p = p.value) |>
-                                      dplyr::mutate(dplyr::across(everything(), ~sprintf("%.3f", round(., digits = 3)))) |>
+                                      dplyr::mutate(dplyr::across(everything(),
+                                                                  ~sprintf("%.3f", round(., digits = 3)))) |>
                                       tidyr::pivot_longer(cols = everything(),
                                                           names_to = "vars_fct",
                                                           values_to = paste0(g, " vs. ", refgrp))))

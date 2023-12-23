@@ -4,14 +4,12 @@
 \alias{kc_sum}
 \title{Descriptive statistics}
 \usage{
-kc_sum(data, sumvar, byvar = NULL)
+kc_sum(data, sumvar)
 }
 \arguments{
 \item{data}{The data frame to summarize}
 
 \item{sumvar}{The variables to summarize; accommodates tidyselect helpers}
-
-\item{byvar}{The variables to group by (optional)}
 }
 \value{
 A data frame with descriptive stats: each var is a row; respective statistics are in column.
@@ -22,7 +20,6 @@ Compute pre-selected set of descriptive statistics for provided vars, optionally
 \examples{
 \dontrun{
 kc_sum(mtcars, c(mpg, disp)) # summary stats for vars mpg and disp
-kc_sum(mtcars, c(mpg, disp), c(vs)) # summary stats for vars mpg and disp by vs
 kc_sum(mtcars, where(is.numeric)) # summary stats for all numeric vars
 }
 }
