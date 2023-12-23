@@ -15,7 +15,7 @@ kc_sum(data, sumvar)
 A data frame with descriptive stats: each var is a row; respective statistics are in column.
 }
 \description{
-Compute pre-selected set of descriptive statistics for provided vars, optionally by group.
+Compute pre-selected set of descriptive statistics for provided vars.
 }
 \examples{
 \dontrun{

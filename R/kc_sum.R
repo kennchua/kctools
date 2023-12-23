@@ -1,6 +1,6 @@
 #' Descriptive statistics
 #'
-#' Compute pre-selected set of descriptive statistics for provided vars, optionally by group.
+#' Compute pre-selected set of descriptive statistics for provided vars.
 #' @param data The data frame to summarize
 #' @param sumvar The variables to summarize; accommodates tidyselect helpers
 #' @return A data frame with descriptive stats: each var is a row; respective statistics are in column.
@@ -17,7 +17,6 @@ kc_sum <- function(data, sumvar) {
   grpvar <- dplyr::group_vars(data)
 
   data |>
-    #dplyr::group_by(across({{ byvar }})) |>
     dplyr::select({{ sumvar }}) |>
     dplyr::select(where(is.numeric)) |>
     dplyr::summarize(across(everything(),
@@ -36,7 +35,7 @@ kc_sum <- function(data, sumvar) {
                                  p99 = ~quantile(., 0.99, na.rm = TRUE)),
                             .names = "{fn}_{col}")) |>
     dplyr::ungroup() |>
-    tidyr::pivot_longer(cols = -{{grpvar}}, # -{{ byvar }},
+    tidyr::pivot_longer(cols = -{{grpvar}},
                         names_pattern = "([^_]+)_(.*)",
                         names_to = c("stat", "varname"),
                         values_to = c("value")) |>
