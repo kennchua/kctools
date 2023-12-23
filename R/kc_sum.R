@@ -40,5 +40,5 @@ kc_sum <- function(data, sumvar) {
                         names_to = c("stat", "varname"),
                         values_to = c("value")) |>
     tidyr::pivot_wider(names_from = "stat", values_from = c("value")) |>
-    dplyr::relocate(avg:p95, .after = varname)
+    dplyr::relocate(avg:p99, .after = varname)
 }
