@@ -37,8 +37,8 @@ kc_sum <- function(data, sumvar) {
     dplyr::ungroup() |>
     tidyr::pivot_longer(cols = -{{grpvar}},
                         names_pattern = "([^_]+)_(.*)",
-                        names_to = c("stat", "varname"),
-                        values_to = c("value")) |>
-    tidyr::pivot_wider(names_from = "stat", values_from = c("value")) |>
-    dplyr::relocate(avg:p99, .after = varname)
+                        names_to = c("kctools_stat", "kctools_varname"),
+                        values_to = c("kctools_value")) |>
+    tidyr::pivot_wider(names_from = "kctools_stat", values_from = c("kctools_value")) |>
+    dplyr::relocate(avg:p99, .after = kctools_varname)
 }
