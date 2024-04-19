@@ -36,11 +36,11 @@ kcf_sum <- function(data, sumvar, byvar = NULL) {
                          .by = {{ byvar }}) |>
     tidytable::pivot_longer(cols = -{{ byvar }},
                             names_pattern = "([^_]+)_(.*)",
-                            names_to = c("kctools_stat", "kctools_varname"),
-                            values_to = c("kctools_value")) |>
-    tidytable::pivot_wider(names_from = "kctools_stat", values_from = c("kctools_value")) |>
+                            names_to = c(".stat", ".var"),
+                            values_to = c(".val")) |>
+    tidytable::pivot_wider(names_from = ".stat", values_from = c(".val")) |>
     tidytable::relocate(avg, sdv, nobs,
-                        nna, min, max, p01:p99, .after = kctools_varname)
+                        nna, min, max, p01:p99, .after = ".var")
 }
 
 .datatable.aware <- TRUE
