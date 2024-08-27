@@ -3,8 +3,9 @@
 #' Export a list of plots to individual sheets within an Excel file; depends on openxlsx and purrr.
 #' @param plotlist List of plots to export
 #' @param sname Vector of names for sheet title
-#' @param width Width (in inches)
-#' @param height Height (in inches)
+#' @param width Width
+#' @param height Height
+#' @param units Units (units of width and height as in openxlsx::insertPlot())
 #' @param fpath File path for output; deprecated - use fname exclusively
 #' @param fname File name for output
 #' @param overwrite If TRUE then overwrites file; if FALSE then appends sheets on existing file
@@ -12,7 +13,7 @@
 #' @import purrr
 
 kc_figxls <- function(plotlist, sname = NULL,
-                      width = 7.45, height = 5.21,
+                      width = 7.0, height = 5.25, units = "in",
                       fpath = NULL, fname = "~/Desktop/KC_Plots.xlsx",
                       overwrite = TRUE) {
 
@@ -56,7 +57,9 @@ kc_figxls <- function(plotlist, sname = NULL,
                  function(x, y) {
                    openxlsx::addWorksheet(wb_plot, toString(y), zoom = 125, gridLines = FALSE)
                    print(x)
-                   openxlsx::insertPlot(wb_plot, toString(y), width = width, height = height, fileType = "png", units = "in")
+                   openxlsx::insertPlot(wb_plot, toString(y),
+                                        width = width, height = height, units = units,
+                                        fileType = "png")
                  })
 
     openxlsx::saveWorkbook(wb_plot,  file = paste0(fpath, fname),
