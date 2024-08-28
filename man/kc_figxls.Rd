@@ -7,8 +7,9 @@
 kc_figxls(
   plotlist,
   sname = NULL,
-  width = 7.45,
-  height = 5.21,
+  width = 7,
+  height = 5.25,
+  units = "in",
   fpath = NULL,
   fname = "~/Desktop/KC_Plots.xlsx",
   overwrite = TRUE
@@ -19,9 +20,11 @@ kc_figxls(
 
 \item{sname}{Vector of names for sheet title}
 
-\item{width}{Width (in inches)}
+\item{width}{Width}
 
-\item{height}{Height (in inches)}
+\item{height}{Height}
+
+\item{units}{Units (units of width and height as in openxlsx::insertPlot())}
 
 \item{fpath}{File path for output; deprecated - use fname exclusively}
 
